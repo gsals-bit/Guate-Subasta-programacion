@@ -1,0 +1,4 @@
+<h1>Programar subasta</h1><section class="panel narrow"><form method="post" action="index.php?action=programar">
+<input type="hidden" name="csrf" value="<?=csrf_token()?>"><label>Artículo</label><select name="articulo_id"><?php foreach($articulos as $a): ?><option value="<?=$a['id']?>"><?=e($a['nombre'])?></option><?php endforeach;?></select>
+<label>Fecha y hora de inicio</label><input type="datetime-local" name="inicio" required><label>Fecha y hora de fin</label><input type="datetime-local" name="fin" required>
+<label>Incremento mínimo (Q)</label><input type="number" step=".01" name="incremento" required><button>Programar subasta</button></form></section>

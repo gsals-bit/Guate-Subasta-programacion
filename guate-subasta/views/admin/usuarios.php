@@ -1,0 +1,2 @@
+<h1>Usuarios y roles</h1><table><tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Activo</th></tr>
+<?php foreach($usuarios as $u): ?><tr><td><?=$u['id']?></td><td><?=e($u['nombre'])?></td><td><?=e($u['email'])?></td><td><?=e($u['rol'])?></td><td><?=$u['activo']?'Sí':'No'?></td></tr><?php endforeach;?></table>

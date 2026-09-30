@@ -1,0 +1,2 @@
+<h1>Mis pujas</h1><table><tr><th>Artículo</th><th>Monto</th><th>Estado</th><th>Fecha</th></tr>
+<?php foreach($pujas as $p): ?><tr><td><?=e($p['articulo'])?></td><td>Q <?=number_format($p['monto'],2)?></td><td><?=e($p['estado'])?></td><td><?=e($p['fecha'])?></td></tr><?php endforeach;?></table>

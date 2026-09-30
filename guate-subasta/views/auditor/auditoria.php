@@ -1,0 +1,2 @@
+<h1>Auditoría</h1><p>Bitácora de operaciones relevantes de la plataforma.</p>
+<table><tr><th>Fecha</th><th>Usuario</th><th>Evento</th><th>Detalle</th></tr><?php foreach($eventos as $x): ?><tr><td><?=e($x['fecha'])?></td><td><?=e($x['usuario']??'Sistema')?></td><td><?=e($x['evento'])?></td><td><?=e($x['detalle'])?></td></tr><?php endforeach;?></table>
