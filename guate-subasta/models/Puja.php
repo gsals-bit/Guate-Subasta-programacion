@@ -17,7 +17,7 @@ class Puja {
             $this->db->prepare("INSERT INTO auditoria(usuario_id,evento,detalle) VALUES(?,?,?)")
                 ->execute([$usuarioId,'PUJA',"Subasta $subastaId - Q $monto"]);
             $this->db->commit();
-            return [true,'Puja registrada correctamente.'];
+            return [true,'Puja registrada Existosamente.'];
         } catch(Throwable $e) {
             if ($this->db->inTransaction()) $this->db->rollBack();
             return [false,$e->getMessage()];
