@@ -2,18 +2,12 @@
 
 Prototipo funcional para Análisis de Sistemas 2, basado en los requisitos documentados del proyecto.
 
-## Requisitos
+ Requisitos
 - XAMPP con Apache, PHP 8.x y MySQL/MariaDB
 - Navegador moderno
 
-## Instalación
-1. Copiar la carpeta `guate-subasta` dentro de `C:\xampp\htdocs\`.
-2. Iniciar Apache y MySQL desde XAMPP.
-3. Abrir phpMyAdmin.
-4. Importar `database/guate_subasta.sql`.
-5. Abrir `http://localhost/guate-subasta/`.
 
-## Base de datos
+#Base de datos
 La conexión predeterminada usa:
 - host: localhost
 - base: guate_subasta
@@ -22,7 +16,7 @@ La conexión predeterminada usa:
 
 Si tu MySQL usa otra contraseña, cambia `config/database.php`.
 
-## Funcionalidad incluida
+#Funcionalidad incluida
 - Registro e inicio de sesión.
 - Roles: Administrador, Subastador, Cliente y Auditor.
 - Catálogo de subastas.
