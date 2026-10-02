@@ -1,4 +1,4 @@
-# Guate-Subasta
+ Guate-Subasta
 
 Prototipo funcional para Análisis de Sistemas 2, basado en los requisitos documentados del proyecto.
 
