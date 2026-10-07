@@ -41,3 +41,7 @@ El SQL contiene usuarios demostrativos. Si una contraseña demo no valida en tu 
 
 ## Pendiente para una versión de producción
 Pasarela de pago real, carga segura de archivos/certificados, recuperación de contraseña por correo, WebSockets, job automático para cierres, edición completa de roles, pruebas automatizadas y endurecimiento de seguridad.
+
+
+##prueba 
+
