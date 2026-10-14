@@ -1,6 +1,6 @@
 <h1>Programar subasta</h1>
 <section class="panel narrow">
-  <form method="post" action="index.php?action=programar">
+  <form method="post" action="index.php?action=programar" id="formProgramar">
     <input type="hidden" name="csrf" value="<?=csrf_token()?>">
     
     <label>Artículo</label>
@@ -10,11 +10,11 @@
       <?php endforeach;?>
     </select>
     
-    <label>Fecha y hora de inicio (Ej: 2026-10-14 14:30)</label>
-    <input type="text" name="inicio" placeholder="2026-10-14 14:30:00" required>
+    <label>Fecha y hora de inicio</label>
+    <input type="datetime-local" name="inicio" id="inicio" required>
     
-    <label>Fecha y hora de fin (Ej: 2026-10-14 15:30)</label>
-    <input type="text" name="fin" placeholder="2026-10-14 15:30:00" required>
+    <label>Fecha y hora de fin</label>
+    <input type="datetime-local" name="fin" id="fin" required>
     
     <label>Incremento mínimo (Q)</label>
     <input type="number" step=".01" min="0.01" name="incremento" required>
@@ -22,3 +22,15 @@
     <button type="submit">Programar subasta</button>
   </form>
 </section>
+
+<script>
+document.getElementById('formProgramar').addEventListener('submit', function(e) {
+    // Aseguramos que los inputs no queden vacíos o con formato inválido para el navegador
+    const inicio = document.getElementById('inicio').value;
+    const fin = document.getElementById('fin').value;
+    if (!inicio || !fin) {
+        e.preventDefault();
+        alert('Por favor selecciona una fecha y hora válidas para el inicio y el fin.');
+    }
+});
+</script>
