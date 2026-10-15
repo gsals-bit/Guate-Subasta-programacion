@@ -1,25 +1,44 @@
+<?php 
+// Extraer categorías que ya existen en la BD y combinarlas con opciones comunes
+$categorias_usadas = array_unique(array_column($articulos, 'categoria'));
+$categorias_base = ['Tecnología', 'Arte', 'Coleccionables', 'Accesorios', 'Relojes', 'Vehículos', 'Antigüedades', 'Joyería', 'Electrónica'];
+$todas_categorias = array_unique(array_merge($categorias_base, $categorias_usadas));
+sort($todas_categorias); // Ordenar alfabéticamente
+?>
 <h1>Gestión de artículos</h1>
 <div class="grid2">
   <section class="panel">
     <h2>Nuevo artículo</h2>
     <form method="post" action="index.php?action=articulo">
       <input type="hidden" name="csrf" value="<?=csrf_token()?>">
+      
       <label>Nombre</label>
       <input name="nombre" required>
+      
       <label>Categoría</label>
-      <input name="categoria" required>
+      <input name="categoria" list="lista-categorias" autocomplete="off" placeholder="Ej: Tecnología" required>
+      <datalist id="lista-categorias">
+        <?php foreach($todas_categorias as $cat): ?>
+          <option value="<?=e($cat)?>">
+        <?php endforeach; ?>
+      </datalist>
+
       <label>Descripción</label>
       <textarea name="descripcion"></textarea>
+      
       <label>Estado físico</label>
       <select name="estado_fisico">
         <option value="Excelente">Excelente</option>
         <option value="Bueno">Bueno</option>
         <option value="Regular">Regular</option>
       </select>
+      
       <label>Precio base (Q)</label>
       <input type="number" step=".01" min="0.01" name="precio_base" required>
+      
       <label>Certificado (referencia)</label>
       <input name="certificado">
+      
       <button type="submit">Guardar artículo</button>
     </form>
   </section>
