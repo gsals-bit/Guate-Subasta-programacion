@@ -1,274 +1,271 @@
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f7fa;color:#17202a}a{color:#1769aa;text-decoration:none}
-header{height:64px;background:#102a43;color:white;display:flex;align-items:center;justify-content:space-between;padding:0 28px}header a{color:white}.brand{font-size:20px;font-weight:bold}nav{display:flex;gap:22px;align-items:center}.shell{display:flex;min-height:calc(100vh - 64px)}
-aside{width:220px;background:#102a43;padding:25px 15px}aside a{display:block;color:#d9e2ec;padding:12px;border-radius:7px;margin-bottom:5px}aside a:hover{background:#c99a2e;color:white}
-main{flex:1;padding:30px;max-width:1400px}.auth-card{max-width:430px;margin:50px auto;background:white;padding:34px;border-radius:12px;box-shadow:0 10px 35px #0002}.auth-card h1{color:#102a43}
-label{display:block;font-weight:bold;margin:14px 0 6px}input,select,textarea{width:100%;padding:11px;border:1px solid #ccd5df;border-radius:6px;background:white}textarea{min-height:90px}
-button,.button{display:inline-block;background:#c99a2e;color:white;border:0;padding:11px 18px;border-radius:6px;font-weight:bold;cursor:pointer;margin-top:15px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}.card,.panel,.stats div{background:white;border:1px solid #e1e7ee;border-radius:10px;padding:20px}.placeholder,.hero{height:130px;background:#e8edf2;display:grid;place-items:center;font-size:50px;border-radius:8px}.hero{height:260px}
-.badge{background:#d7f5e3;color:#157347;padding:5px 9px;border-radius:20px;font-size:12px}.detail,.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}.narrow{max-width:650px}
-table{width:100%;border-collapse:collapse;background:white}th,td{text-align:left;padding:12px;border-bottom:1px solid #e5e9ef}th{background:#eef3f7}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin:20px 0}.stats b{display:block;font-size:28px;margin-top:8px}.flash{padding:12px;background:#fff3cd;border:1px solid #ffe69c;border-radius:7px;margin-bottom:18px}.demo{margin-top:20px;background:#eef3f7;padding:10px;border-radius:6px}
-@media(max-width:800px){aside{display:none}.detail,.grid2,.stats{grid-template-columns:1fr}main{padding:18px}}
-.auth-wrapper {
-    width: 950px;
-    max-width: 92%;
-    margin: 60px auto;
-    padding: 40px;
-    background: white;
-    border-radius: 18px;
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
-}
-
-
-/* ===== LOGIN GUATE-SUBASTA ===== */
-
-.auction-login {
-    min-height: 100vh;
-    display: grid;
-    grid-template-columns: 1fr 0.9fr;
-    background: #101923;
-    color: #172638;
-    font-family: Arial, sans-serif;
-}
-
-.auction-brand {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 55px;
-    color: #fff;
-    background:
-        linear-gradient(135deg, rgba(8, 15, 25, .88),
-        rgba(14, 29, 44, .97)),
-        url("../img/auction-bg.jpg") center / cover;
-}
-
-.brand-content {
-    max-width: 520px;
-    text-align: center;
-}
-
-.brand-icon {
-    display: block;
-    font-size: 55px;
-    color: #d5a441;
-}
-
-.brand-content h1 {
-    margin: 15px 0;
-    font-family: Georgia, serif;
-    font-size: clamp(38px, 4vw, 60px);
-    color: #e5bd6b;
-    letter-spacing: -1px;
-}
-
-.brand-subtitle {
-    font-size: 18px;
-    line-height: 1.7;
-    color: #e1e5eb;
-}
-
-.brand-features {
-    display: flex;
-    justify-content: center;
-    gap: 42px;
-    margin: 45px 0;
-}
-
-.brand-features div {
-    display: grid;
-    gap: 10px;
-    justify-items: center;
-}
-
-.brand-features span {
-    font-size: 32px;
-    color: #d5a441;
-}
-
-.brand-features small {
-    font-size: 13px;
-    color: #e6e9ed;
-}
-
-.brand-description {
-    max-width: 410px;
-    margin: auto;
-    color: #c4cbd5;
-    line-height: 1.8;
-}
-
-.auction-form-side {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 35px;
-    background: #f2f4f7;
-}
-
-.auction-card {
-    width: 100%;
-    max-width: 450px;
-    padding: 42px;
-    background: #fff;
-    border: 1px solid #e2e6eb;
-    border-radius: 16px;
-    box-shadow: 0 18px 55px rgba(16, 25, 35, .12);
-}
-
-.card-emblem {
-    display: grid;
-    place-items: center;
-    width: 58px;
-    height: 58px;
-    margin: 0 auto 20px;
-    border: 1px solid #d5a441;
-    border-radius: 50%;
-    color: #b48425;
-    font-family: Georgia, serif;
-    font-weight: bold;
-    letter-spacing: 2px;
-}
-
-.auction-card h2 {
-    margin: 0;
-    text-align: center;
-    font-family: Georgia, serif;
-    font-size: 32px;
-    color: #142b43;
-}
-
-.card-subtitle {
-    margin: 12px 0 32px;
-    text-align: center;
-    color: #697586;
-    line-height: 1.6;
-}
-
-.auction-card form {
-    display: flex;
-    flex-direction: column;
-}
-
-.auction-card label {
-    margin: 0 0 9px;
-    font-weight: 600;
-    color: #172638;
-}
-
-.auction-card input {
-    box-sizing: border-box;
-    width: 100%;
-    height: 51px;
-    margin-bottom: 23px;
-    padding: 0 15px;
-    border: 1px solid #d5dbe3;
-    border-radius: 8px;
-    outline: none;
-    background: #fff;
-    color: #172638;
-    font-size: 15px;
-}
-
-.auction-card input:focus {
-    border-color: #b98a2e;
-    box-shadow: 0 0 0 3px rgba(213, 164, 65, .16);
-}
-
-.auction-submit {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    width: 100%;
-    min-height: 53px;
-    border: none;
-    border-radius: 8px;
-    background: #bd8c2c;
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background .2s, transform .2s;
-}
-
-.auction-submit:hover {
-    background: #9f7421;
-    transform: translateY(-1px);
-}
-
-.auction-submit span {
-    font-size: 22px;
-}
-
-.register-link {
-    margin: 26px 0;
-    text-align: center;
-    color: #657184;
-}
-
-.register-link a {
-    color: #a9791e;
-    font-weight: bold;
-    text-decoration: none;
-}
-
-.register-link a:hover {
-    text-decoration: underline;
-}
-
-.card-footer {
-    padding-top: 20px;
-    border-top: 1px solid #e7e9ed;
-    text-align: center;
-    color: #7a8492;
-    font-size: 13px;
-}
-
-.card-footer span {
-    margin-right: 7px;
-    color: #b98a2e;
-}
-
-.login-error {
-    margin-bottom: 20px;
-    padding: 12px;
-    border: 1px solid #efb6b6;
-    border-radius: 7px;
-    background: #fff0f0;
-    color: #a32626;
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-@media (max-width: 850px) {
-    .auction-login {
-        grid-template-columns: 1fr;
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f7fa;color:#17202a}a{color:#1769aa;text-decoration:none}
+    header{height:64px;background:#102a43;color:white;display:flex;align-items:center;justify-content:space-between;padding:0 28px}header a{color:white}.brand{font-size:20px;font-weight:bold}nav{display:flex;gap:22px;align-items:center}.shell{display:flex;min-height:calc(100vh - 64px)}
+    aside{width:220px;background:#102a43;padding:25px 15px}aside a{display:block;color:#d9e2ec;padding:12px;border-radius:7px;margin-bottom:5px}aside a:hover{background:#c99a2e;color:white}
+    main{flex:1;padding:30px;max-width:1400px}.auth-card{max-width:430px;margin:50px auto;background:white;padding:34px;border-radius:12px;box-shadow:0 10px 35px #0002}.auth-card h1{color:#102a43}
+    label{display:block;font-weight:bold;margin:14px 0 6px}input,select,textarea{width:100%;padding:11px;border:1px solid #ccd5df;border-radius:6px;background:white}textarea{min-height:90px}
+    button,.button{display:inline-block;background:#c99a2e;color:white;border:0;padding:11px 18px;border-radius:6px;font-weight:bold;cursor:pointer;margin-top:15px}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}.card,.panel,.stats div{background:white;border:1px solid #e1e7ee;border-radius:10px;padding:20px}.placeholder,.hero{height:130px;background:#e8edf2;display:grid;place-items:center;font-size:50px;border-radius:8px}.hero{height:260px}
+    .badge{background:#d7f5e3;color:#157347;padding:5px 9px;border-radius:20px;font-size:12px}.detail,.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}.narrow{max-width:650px}
+    table{width:100%;border-collapse:collapse;background:white}th,td{text-align:left;padding:12px;border-bottom:1px solid #e5e9ef}th{background:#eef3f7}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin:20px 0}.stats b{display:block;font-size:28px;margin-top:8px}.flash{padding:12px;background:#fff3cd;border:1px solid #ffe69c;border-radius:7px;margin-bottom:18px}.demo{margin-top:20px;background:#eef3f7;padding:10px;border-radius:6px}
+    @media(max-width:800px){aside{display:none}.detail,.grid2,.stats{grid-template-columns:1fr}main{padding:18px}}
+    .auth-wrapper {
+        width: 950px;
+        max-width: 92%;
+        margin: 60px auto;
+        padding: 40px;
+        background: white;
+        border-radius: 18px;
+        box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
     }
 
-    .auction-brand {
-        min-height: 240px;
-        padding: 35px 20px;
+
+    /* ===== LOGIN GUATE-SUBASTA ===== */
+
+    .auction-login {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 1fr 0.9fr;
+        background: #101923;
+        color: #172638;
+        font-family: Arial, sans-serif;
+    }
+
+.auction-brand {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(8, 15, 25, 0.65),
+            rgba(14, 29, 44, 0.80)
+        ),
+        url("../img/auction-bg.png") center / cover no-repeat;
+}
+    .brand-content {
+        max-width: 520px;
+        text-align: center;
+    }
+
+    .brand-icon {
+        display: block;
+        font-size: 55px;
+        color: #d5a441;
     }
 
     .brand-content h1 {
-        font-size: 38px;
+        margin: 15px 0;
+        font-family: Georgia, serif;
+        font-size: clamp(38px, 4vw, 60px);
+        color: #e5bd6b;
+        letter-spacing: -1px;
+    }
+
+    .brand-subtitle {
+        font-size: 18px;
+        line-height: 1.7;
+        color: #e1e5eb;
     }
 
     .brand-features {
-        margin: 25px 0;
-        gap: 30px;
+        display: flex;
+        justify-content: center;
+        gap: 42px;
+        margin: 45px 0;
+    }
+
+    .brand-features div {
+        display: grid;
+        gap: 10px;
+        justify-items: center;
+    }
+
+    .brand-features span {
+        font-size: 32px;
+        color: #d5a441;
+    }
+
+    .brand-features small {
+        font-size: 13px;
+        color: #e6e9ed;
     }
 
     .brand-description {
-        display: none;
+        max-width: 410px;
+        margin: auto;
+        color: #c4cbd5;
+        line-height: 1.8;
     }
 
     .auction-form-side {
-        padding: 25px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 35px;
+        background: #f2f4f7;
     }
 
     .auction-card {
-        box-sizing: border-box;
-        padding: 30px 23px;
+        width: 100%;
+        max-width: 450px;
+        padding: 42px;
+        background: #fff;
+        border: 1px solid #e2e6eb;
+        border-radius: 16px;
+        box-shadow: 0 18px 55px rgba(16, 25, 35, .12);
     }
-}
+
+    .card-emblem {
+        display: grid;
+        place-items: center;
+        width: 58px;
+        height: 58px;
+        margin: 0 auto 20px;
+        border: 1px solid #d5a441;
+        border-radius: 50%;
+        color: #b48425;
+        font-family: Georgia, serif;
+        font-weight: bold;
+        letter-spacing: 2px;
+    }
+
+    .auction-card h2 {
+        margin: 0;
+        text-align: center;
+        font-family: Georgia, serif;
+        font-size: 32px;
+        color: #142b43;
+    }
+
+    .card-subtitle {
+        margin: 12px 0 32px;
+        text-align: center;
+        color: #697586;
+        line-height: 1.6;
+    }
+
+    .auction-card form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .auction-card label {
+        margin: 0 0 9px;
+        font-weight: 600;
+        color: #172638;
+    }
+
+    .auction-card input {
+        box-sizing: border-box;
+        width: 100%;
+        height: 51px;
+        margin-bottom: 23px;
+        padding: 0 15px;
+        border: 1px solid #d5dbe3;
+        border-radius: 8px;
+        outline: none;
+        background: #fff;
+        color: #172638;
+        font-size: 15px;
+    }
+
+    .auction-card input:focus {
+        border-color: #b98a2e;
+        box-shadow: 0 0 0 3px rgba(213, 164, 65, .16);
+    }
+
+    .auction-submit {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        width: 100%;
+        min-height: 53px;
+        border: none;
+        border-radius: 8px;
+        background: #bd8c2c;
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background .2s, transform .2s;
+    }
+
+    .auction-submit:hover {
+        background: #9f7421;
+        transform: translateY(-1px);
+    }
+
+    .auction-submit span {
+        font-size: 22px;
+    }
+
+    .register-link {
+        margin: 26px 0;
+        text-align: center;
+        color: #657184;
+    }
+
+    .register-link a {
+        color: #a9791e;
+        font-weight: bold;
+        text-decoration: none;
+    }
+
+    .register-link a:hover {
+        text-decoration: underline;
+    }
+
+    .card-footer {
+        padding-top: 20px;
+        border-top: 1px solid #e7e9ed;
+        text-align: center;
+        color: #7a8492;
+        font-size: 13px;
+    }
+
+    .card-footer span {
+        margin-right: 7px;
+        color: #b98a2e;
+    }
+
+    .login-error {
+        margin-bottom: 20px;
+        padding: 12px;
+        border: 1px solid #efb6b6;
+        border-radius: 7px;
+        background: #fff0f0;
+        color: #a32626;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 850px) {
+        .auction-login {
+            grid-template-columns: 1fr;
+        }
+
+        .auction-brand {
+            min-height: 240px;
+            padding: 35px 20px;
+        }
+
+        .brand-content h1 {
+            font-size: 38px;
+        }
+
+        .brand-features {
+            margin: 25px 0;
+            gap: 30px;
+        }
+
+        .brand-description {
+            display: none;
+        }
+
+        .auction-form-side {
+            padding: 25px 16px;
+        }
+
+        .auction-card {
+            box-sizing: border-box;
+            padding: 30px 23px;
+        }
+    }
