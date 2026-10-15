@@ -1,129 +1,95 @@
-<div class="auth-wrapper">
 
-    <div class="auth-header">
-        <h1>Guate-Subasta</h1>
-        <p>Selecciona el tipo de usuario</p>
-    </div>
+<?php
+$csrf = csrf_token();
+?>
 
-    <div class="auth-options">
-
-        <!-- USUARIO -->
-        <div class="auth-section">
-            <div class="auth-icon">👤</div>
-
-            <h2>Usuario</h2>
-
-            <p class="auth-description">
-                Accede para participar en subastas,
-                realizar ofertas y administrar tu cuenta.
+<div class="auction-login">
+    <section class="auction-brand">
+        <div class="brand-content">
+            <span class="brand-icon">⚖</span>
+            <h1>Guate-Subasta</h1>
+            <p class="brand-subtitle">
+                Subastas privadas de artículos exclusivos
             </p>
 
-            <form method="post" action="index.php?action=login">
+            <div class="brand-features">
+                <div>
+                    <span>♢</span>
+                    <small>Seguro</small>
+                </div>
+                <div>
+                    <span>◇</span>
+                    <small>Exclusivo</small>
+                </div>
+                <div>
+                    <span>♧</span>
+                    <small>Confiable</small>
+                </div>
+            </div>
 
-                <input
-                    type="hidden"
-                    name="csrf"
-                    value="<?= csrf_token() ?>"
-                >
-
-                <input
-                    type="hidden"
-                    name="tipo_usuario"
-                    value="usuario"
-                >
-
-                <label>Correo electrónico</label>
-
-                <input
-                    type="email"
-                    name="email"
-                    placeholder="correo@ejemplo.com"
-                    required
-                >
-
-                <label>Contraseña</label>
-
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Contraseña"
-                    required
-                >
-
-                <button type="submit">
-                    Iniciar como Usuario
-                </button>
-
-            </form>
-
-            <p class="registro">
-                ¿No tienes cuenta?
-                <a href="index.php?page=registro">
-                    Regístrate
-                </a>
+            <p class="brand-description">
+                Descubre artículos únicos, participa en subastas
+                y encuentra piezas extraordinarias.
             </p>
         </div>
+    </section>
 
+    <section class="auction-form-side">
+        <div class="auction-card">
+            <div class="card-emblem">G S</div>
 
-        <div class="auth-divider"></div>
-
-
-        <!-- ADMINISTRADOR -->
-        <div class="auth-section">
-            <div class="auth-icon">⚙️</div>
-
-            <h2>Administrador</h2>
-
-            <p class="auth-description">
-                Acceso exclusivo para la administración
-                y control de Guate-Subasta.
+            <h2>Bienvenido</h2>
+            <p class="card-subtitle">
+                Ingresa a tu cuenta para continuar
             </p>
 
-            <form method="post" action="index.php?action=login">
+            <?php if (!empty($error)): ?>
+                <div class="login-error" role="alert">
+                    <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?>
+                </div>
+            <?php endif; ?>
 
+            <form method="post" action="index.php?action=login">
                 <input
                     type="hidden"
                     name="csrf"
-                    value="<?= csrf_token() ?>"
+                    value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>"
                 >
 
+                <label for="email">Correo electrónico</label>
                 <input
-                    type="hidden"
-                    name="tipo_usuario"
-                    value="admin"
-                >
-
-                <label>Correo electrónico</label>
-
-                <input
+                    id="email"
                     type="email"
                     name="email"
-                    placeholder="admin@guate.test"
+                    placeholder="tu@correo.com"
+                    autocomplete="username"
                     required
                 >
 
-                <label>Contraseña</label>
-
+                <label for="password">Contraseña</label>
                 <input
+                    id="password"
                     type="password"
                     name="password"
-                    placeholder="Contraseña"
+                    placeholder="Ingresa tu contraseña"
+                    autocomplete="current-password"
                     required
                 >
 
-                <button type="submit">
-                    Iniciar como Administrador
+                <button type="submit" class="auction-submit">
+                    Iniciar sesión <span>→</span>
                 </button>
-
             </form>
 
-            <div class="demo">
-                <b>Demo administrador:</b><br>
-                admin@guate.test<br>
-                Admin123!
+            <p class="register-link">
+                ¿No tienes cuenta?
+                <a href="index.php?page=registro">Regístrate</a>
+            </p>
+
+            <div class="card-footer">
+                <span>♧</span>
+                Acceso seguro a Guate-Subasta
             </div>
         </div>
-
-    </div>
-
+    </section>
 </div>
