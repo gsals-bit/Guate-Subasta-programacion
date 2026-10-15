@@ -9,19 +9,40 @@ $action=$_GET['action']??'';
 if($action==='login') (new AuthController($db))->login();
 if($action==='registro') (new AuthController($db))->registro();
 if($action==='pujar') (new PujaController($db))->crear();
+
+// Permitimos que Cliente (Pujador), Subastador y Administrador ingresen productos
 if($action==='articulo'){
-    require_role(['Subastador','Administrador']); verify_csrf();
+    require_role(['Cliente','Subastador','Administrador']); verify_csrf();
     (new Articulo($db))->create([
       'nombre'=>trim($_POST['nombre']),'categoria'=>trim($_POST['categoria']),'descripcion'=>trim($_POST['descripcion']),
       'estado_fisico'=>$_POST['estado_fisico'],'precio_base'=>(float)$_POST['precio_base'],
       'certificado'=>trim($_POST['certificado']),'creado_por'=>$_SESSION['user']['id']
     ]); $_SESSION['flash']='Artículo registrado.'; redirect('index.php?page=articulos');
 }
+
+// Permitimos programar la subasta
 if($action==='programar'){
-    require_role(['Subastador','Administrador']); verify_csrf();
+    require_role(['Cliente','Subastador','Administrador']); verify_csrf();
     (new Subasta($db))->crear((int)$_POST['articulo_id'],str_replace('T',' ',$_POST['inicio']),str_replace('T',' ',$_POST['fin']),(float)$_POST['incremento']);
     $_SESSION['flash']='Subasta programada.'; redirect('index.php?page=catalogo');
 }
+
+// Nueva acción para eliminar subasta cuando ya está cerrada
+if($action==='eliminar_subasta'){
+    require_role(['Cliente','Subastador','Administrador']); verify_csrf();
+    [$ok, $msg] = (new Subasta($db))->eliminarCerrada((int)($_POST['subasta_id'] ?? $_GET['id'] ?? 0));
+    $_SESSION['flash'] = $msg;
+    redirect('index.php?page=catalogo');
+}
+
+// Nueva acción para eliminar artículo
+if($action==='eliminar_articulo'){
+    require_role(['Cliente','Subastador','Administrador']); verify_csrf();
+    [$ok, $msg] = (new Articulo($db))->eliminar((int)($_POST['articulo_id'] ?? $_GET['id'] ?? 0));
+    $_SESSION['flash'] = $msg;
+    redirect('index.php?page=articulos');
+}
+
 $page=$_GET['page']??(empty($_SESSION['user'])?'login':'dashboard');
 if($page==='logout') (new AuthController($db))->logout();
 
@@ -37,9 +58,9 @@ switch($page){
  case 'mis-pujas':
    require_role(['Cliente']); $pujas=(new Puja($db))->historialUsuario($_SESSION['user']['id']); require __DIR__.'/views/cliente/mis_pujas.php'; break;
  case 'articulos':
-   require_role(['Subastador','Administrador']); $articulos=(new Articulo($db))->all(); require __DIR__.'/views/subastador/articulos.php'; break;
+   require_role(['Cliente','Subastador','Administrador']); $articulos=(new Articulo($db))->all(); require __DIR__.'/views/subastador/articulos.php'; break;
  case 'programar':
-   require_role(['Subastador','Administrador']); $articulos=(new Articulo($db))->all(); require __DIR__.'/views/subastador/programar.php'; break;
+   require_role(['Cliente','Subastador','Administrador']); $articulos=(new Articulo($db))->all(); require __DIR__.'/views/subastador/programar.php'; break;
  case 'usuarios':
    require_role(['Administrador']); $usuarios=(new Usuario($db))->all(); require __DIR__.'/views/admin/usuarios.php'; break;
  case 'auditoria':

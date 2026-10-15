@@ -1,14 +1,26 @@
-<h1><?=e($subasta['articulo'])?></h1><div class="detail"><section class="panel">
-<div class="hero">🔨</div><h3>Descripción</h3><p><?=e($subasta['descripcion'])?></p>
-<?php if($subasta['certificado']): ?><p>📄 Certificado: <?=e($subasta['certificado'])?></p><?php endif;?></section>
-<section class="panel"><span class="badge"><?=e($subasta['estado'])?></span>
-<p>Precio base: <b>Q <?=number_format($subasta['precio_base'],2)?></b></p>
-<p>Monto actual: <b>Q <?=number_format($subasta['monto_actual'],2)?></b></p>
-<p>Incremento mínimo: Q <?=number_format($subasta['incremento_minimo'],2)?></p>
-<p>Finaliza: <?=e($subasta['fecha_fin'])?></p>
-<?php if(($_SESSION['user']['rol']??'')==='Cliente'): ?><form method="post" action="index.php?action=pujar">
-<input type="hidden" name="csrf" value="<?=csrf_token()?>"><input type="hidden" name="subasta_id" value="<?=$subasta['id']?>">
-<label>Monto de mi puja (Q)</label><input type="number" step=".01" name="monto" min="<?=($subasta['monto_actual']+$subasta['incremento_minimo'])?>" required>
-<button>Realizar puja</button></form><?php endif;?></section></div>
-<h2>Historial de pujas</h2><table><tr><th>Usuario</th><th>Monto</th><th>Fecha</th></tr>
-<?php foreach($historial as $p): ?><tr><td><?=e($p['usuario'])?></td><td>Q <?=number_format($p['monto'],2)?></td><td><?=e($p['fecha'])?></td></tr><?php endforeach;?></table>
+<h1>Subastas</h1>
+<p>Consulta artículos programados, activos y finalizados.</p>
+<div class="cards">
+<?php foreach($subastas as $s): ?>
+  <article class="card">
+    <span class="badge"><?=e($s['estado'])?></span>
+    <h3><?=e($s['articulo'])?></h3>
+    <p><?=e($s['categoria'])?></p>
+    <b>Q <?=number_format($s['monto_actual'],2)?></b>
+    <p>Incremento: Q <?=number_format($s['incremento_minimo'],2)?></p>
+    <p>Finaliza: <?=e($s['fecha_fin'])?></p>
+    
+    <div style="display:flex; gap:8px; margin-top:10px; align-items:center;">
+      <a class="button" href="index.php?page=detalle&id=<?=$s['id']?>">Ver detalles</a>
+
+      <?php if($s['estado'] === 'cerrada'): ?>
+        <form method="post" action="index.php?action=eliminar_subasta" onsubmit="return confirm('¿Seguro que deseas eliminar esta subasta cerrada?');" style="margin:0;">
+          <input type="hidden" name="csrf" value="<?=csrf_token()?>">
+          <input type="hidden" name="subasta_id" value="<?=(int)$s['id']?>">
+          <button type="submit" style="background:#dc2626; color:#fff; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">Eliminar</button>
+        </form>
+      <?php endif; ?>
+    </div>
+  </article>
+<?php endforeach;?>
+</div>

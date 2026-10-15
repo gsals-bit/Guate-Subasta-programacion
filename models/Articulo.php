@@ -7,4 +7,23 @@ class Articulo {
         VALUES(?,?,?,?,?,?,?)");
         return $q->execute([$d['nombre'],$d['categoria'],$d['descripcion'],$d['estado_fisico'],$d['precio_base'],$d['certificado'],$d['creado_por']]);
     }
+    public function eliminar(int $id): array {
+        // Verifica si tiene subastas activas o programadas
+        $q = $this->db->prepare("SELECT COUNT(*) FROM subastas WHERE articulo_id = ? AND estado IN ('programada','activa') AND fecha_fin > NOW()");
+        $q->execute([$id]);
+        if ($q->fetchColumn() > 0) {
+            return [false, 'No se puede eliminar el artículo porque tiene una subasta en curso.'];
+        }
+        try {
+            $this->db->beginTransaction();
+            $this->db->prepare("DELETE FROM pujas WHERE subasta_id IN (SELECT id FROM subastas WHERE articulo_id = ?)")->execute([$id]);
+            $this->db->prepare("DELETE FROM subastas WHERE articulo_id = ?")->execute([$id]);
+            $this->db->prepare("DELETE FROM articulos WHERE id = ?")->execute([$id]);
+            $this->db->commit();
+            return [true, 'Artículo y sus registros cerrados fueron eliminados.'];
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            return [false, 'Error al eliminar artículo: ' . $e->getMessage()];
+        }
+    }
 }
