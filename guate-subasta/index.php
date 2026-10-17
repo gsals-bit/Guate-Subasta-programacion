@@ -60,7 +60,7 @@ switch($page){
  case 'articulos':
    require_role(['Cliente','Subastador','Administrador']); $articulos=(new Articulo($db))->all(); require __DIR__.'/views/subastador/articulos.php'; break;
  case 'programar':
-   require_role(['Cliente','Subastador','Administrador']); $articulos=(new Articulo($db))->all(); require __DIR__.'/views/subastador/programar.php'; break;
+   require_role(['Cliente','Subastador','Administrador']); $articulos=(new Articulo($db))->disponiblesParaSubasta(); require __DIR__.'/views/subastador/programar.php'; break;
  case 'usuarios':
    require_role(['Administrador']); $usuarios=(new Usuario($db))->all(); require __DIR__.'/views/admin/usuarios.php'; break;
  case 'auditoria':
