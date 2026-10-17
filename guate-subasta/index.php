@@ -166,4 +166,4 @@ switch ($page) {
             'subastas' => $db->query("SELECT COUNT(*) FROM subastas")->fetchColumn(),
             'pujas' => $db->query("SELECT COUNT(*) FROM pujas")->fetchColumn()
         ];
-        require __DIR__.'/views/admin/dashboard
+        require __DIR__ . '/views/admin/dashboard.php';
