@@ -85,7 +85,26 @@ if ($action === 'eliminar_articulo') {
     $_SESSION['flash'] =$msg;
     redirect('index.php?page=articulos');
 }
+// Acción para que el Administrador actualice rol y estado de un usuario
+if ($action === 'actualizar_usuario') {
+    require_role(['Administrador']);
+    verify_csrf();
+    $uid = (int)($_POST['usuario_id'] ?? 0);
+    $nuevoRol = trim($_POST['rol'] ?? 'Cliente');
+    $nuevoActivo = (int)($_POST['activo'] ?? 1) === 1 ? 1 : 0;
+    $rolesValidos = ['Cliente', 'Subastador', 'Auditor', 'Administrador'];
 
+    if ($uid > 0 && $uid !== (int)$_SESSION['user']['id'] && in_array($nuevoRol, $rolesValidos, true)) {
+        $q = $db->prepare("UPDATE usuarios SET rol = ?, activo = ? WHERE id = ?");
+        $q->execute([$nuevoRol, $nuevoActivo, $uid]);
+        $estadoTxt = $nuevoActivo ? 'Activo' : 'Inactivo';
+        $registrarAuditoria('ACTUALIZAR_USUARIO', "Usuario ID #{$uid} actualizado a Rol: {$nuevoRol} | Estado: {$estadoTxt}");
+        $_SESSION['flash'] = 'Permisos del usuario actualizados correctamente.';
+    } else {
+        $_SESSION['flash'] = 'No se pudo modificar el usuario seleccionado.';
+    }
+    redirect('index.php?page=usuarios');
+}
 $page = $_GET['page'] ?? (empty($_SESSION['user']) ? 'login' : 'dashboard');
 if ($page === 'logout') (new AuthController($db))->logout();
 
