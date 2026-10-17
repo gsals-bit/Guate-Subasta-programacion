@@ -158,12 +158,16 @@ switch ($page) {
         ")->fetchAll();
         require __DIR__.'/views/auditor/auditoria.php';
         break;
-    default:
+   default:
         require_login();
-        (new Subasta($db))->actualizarEstados();$stats = [
+        (new Subasta($db))->actualizarEstados();
+        $stats = [
             'usuarios' => $db->query("SELECT COUNT(*) FROM usuarios")->fetchColumn(),
             'articulos' => $db->query("SELECT COUNT(*) FROM articulos")->fetchColumn(),
             'subastas' => $db->query("SELECT COUNT(*) FROM subastas")->fetchColumn(),
             'pujas' => $db->query("SELECT COUNT(*) FROM pujas")->fetchColumn()
         ];
-        require __DIR__ . '/views/layouts/footer.php';
+        require __DIR__ . '/views/admin/dashboard.php';
+        break;
+}
+require __DIR__ . '/views/layouts/footer.php';
