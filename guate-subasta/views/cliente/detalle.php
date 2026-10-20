@@ -1,31 +1,49 @@
 <?php
 $lider = $historial[0] ?? null;
 $esPropietario = isset($_SESSION['user']['id'], $subasta['creado_por']) && ((int)$_SESSION['user']['id'] === (int)$subasta['creado_por']);
+
+// Validación dinámica de estado por tiempo (Igual que en el catálogo)
+$esCerrada = in_array(strtolower($subasta['estado'] ?? ''), ['cerrada', 'finalizada']) || strtotime($subasta['fecha_fin']) <= time();
+$estadoReal = $esCerrada ? 'cerrada' : (empty($subasta['estado']) ? 'activa' : strtolower($subasta['estado']));
+
+// Asignación de colores para las etiquetas
+$colorBadge = '#16a34a'; 
+if ($estadoReal === 'cerrada') $colorBadge = '#4b5563'; 
+if ($estadoReal === 'programada') $colorBadge = '#d97706'; 
+
+// Formatear las fechas a formato de 12 horas con segundos
+$fechaFinFormateada = date('d/m/Y h:i:s A', strtotime($subasta['fecha_fin']));
+$fechaInicioFormateada = date('d/m/Y h:i:s A', strtotime($subasta['fecha_inicio']));
 ?>
 <div class="grid2">
   <section class="panel">
     <h1><?=e($subasta['articulo'])?></h1>
-    <span class="badge"><?=e($subasta['estado'])?></span>
+    
+    <span class="badge" style="background: <?=$colorBadge?>; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; display: inline-block; text-transform: capitalize; margin-bottom: 10px;">
+      <?=e($estadoReal)?>
+    </span>
+    
     <p><strong>Categoría:</strong> <?=e($subasta['categoria'])?></p>
     <p><strong>Descripción:</strong> <?=e($subasta['descripcion'])?></p>
     <p><strong>Certificado:</strong> <?=e($subasta['certificado'] ?: 'N/A')?></p>
     <hr style="margin:15px 0;">
-    <p><strong>Finaliza:</strong> <?=e($subasta['fecha_fin'])?></p>
+    <p><strong>Finaliza:</strong> <?=e($fechaFinFormateada)?></p>
 
-    <?php if($subasta['estado'] !== 'cerrada'): ?>
+    <!-- Solo muestra el contador si realmente está activa o programada -->
+    <?php if($estadoReal !== 'cerrada'): ?>
       <p><strong>Tiempo restante:</strong> <span id="contador-subasta" data-fin="<?=e(str_replace(' ', 'T', $subasta['fecha_fin']))?>" style="font-weight:bold; color:#fbbf24;">Calculando...</span></p>
     <?php endif; ?>
 
     <h3>Precio Actual: Q <?=number_format($subasta['monto_actual'], 2)?></h3>
     <p><small>Incremento mínimo requerido: Q <?=number_format($subasta['incremento_minimo'], 2)?></small></p>
 
-    <?php if($subasta['estado'] === 'activa' && $lider): ?>
+    <?php if($estadoReal === 'activa' && $lider): ?>
       <div style="background:#1e3a8a; color:#dbeafe; padding:10px; border-radius:4px; margin-top:12px;">
         <strong>Oferta líder actual:</strong> <?=e($lider['usuario'])?> con Q <?=number_format($lider['monto'], 2)?>
       </div>
     <?php endif; ?>
     
-    <?php if($subasta['estado'] === 'activa'): ?>
+    <?php if($estadoReal === 'activa'): ?>
       <?php if($esPropietario): ?>
         <div style="background:#374151; color:#f3f4f6; padding:10px; border-radius:4px; margin-top:20px;">
           Registraste este artículo. No puedes realizar ofertas en tu propia subasta.
@@ -39,9 +57,9 @@ $esPropietario = isset($_SESSION['user']['id'], $subasta['creado_por']) && ((int
           <button type="submit">Realizar Puja</button>
         </form>
       <?php endif; ?>
-    <?php elseif($subasta['estado'] === 'programada'): ?>
+    <?php elseif($estadoReal === 'programada'): ?>
       <div style="background:#fef3c7; color:#92400e; padding:10px; border-radius:4px; margin-top:20px;">
-        Esta subasta aún no inicia. Podrás pujar a partir de: <?=e($subasta['fecha_inicio'])?>
+        Esta subasta aún no inicia. Podrás pujar a partir de: <?=e($fechaInicioFormateada)?>.
       </div>
     <?php else: ?>
       <div style="background:#fee2e2; color:#991b1b; padding:12px; border-radius:4px; margin-top:20px;">
@@ -54,7 +72,7 @@ $esPropietario = isset($_SESSION['user']['id'], $subasta['creado_por']) && ((int
       </div>
     <?php endif; ?>
 
-    <?php if($subasta['estado'] === 'cerrada' && in_array($_SESSION['user']['rol'], ['Cliente', 'Subastador', 'Administrador'])): ?>
+    <?php if($estadoReal === 'cerrada' && in_array($_SESSION['user']['rol'], ['Cliente', 'Subastador', 'Administrador'])): ?>
       <form method="post" action="index.php?action=eliminar_subasta" onsubmit="return confirm('¿Seguro que deseas eliminar esta subasta cerrada?');" style="margin-top:15px;">
         <input type="hidden" name="csrf" value="<?=csrf_token()?>">
         <input type="hidden" name="subasta_id" value="<?=(int)$subasta['id']?>">
@@ -78,7 +96,8 @@ $esPropietario = isset($_SESSION['user']['id'], $subasta['creado_por']) && ((int
         <?php foreach($historial as $index => $h): ?>
           <tr>
             <td><?= $index === 0 ? '<strong>1 (Líder)</strong>' : ($index + 1) ?></td>
-            <td><?=e($h['fecha'])?></td>
+            <!-- Se formatea la fecha del historial de pujas -->
+            <td><?=e(date('d/m/Y h:i:s A', strtotime($h['fecha'])))?></td>
             <td><?=e($h['usuario'])?></td>
             <td>Q <?=number_format($h['monto'], 2)?></td>
           </tr>
@@ -88,19 +107,25 @@ $esPropietario = isset($_SESSION['user']['id'], $subasta['creado_por']) && ((int
   </section>
 </div>
 
+<!-- El script Javascript solo existirá si la subasta sigue abierta, evitando bucles infinitos -->
+<?php if($estadoReal !== 'cerrada'): ?>
 <script>
 (function() {
   const el = document.getElementById('contador-subasta');
   if (!el) return;
   const fechaFin = new Date(el.getAttribute('data-fin')).getTime();
+  let recargando = false;
 
   const actualizarContador = function() {
     const ahora = new Date().getTime();
     const diferencia = fechaFin - ahora;
 
     if (diferencia <= 0) {
-      el.textContent = 'Tiempo agotado. Actualizando...';
-      setTimeout(function() { window.location.reload(); }, 1500);
+      el.textContent = 'Tiempo agotado. Actualizando estado...';
+      if (!recargando) {
+        recargando = true;
+        setTimeout(function() { window.location.reload(); }, 1500);
+      }
       return false;
     }
 
@@ -123,3 +148,4 @@ $esPropietario = isset($_SESSION['user']['id'], $subasta['creado_por']) && ((int
   }
 })();
 </script>
+<?php endif; ?>
