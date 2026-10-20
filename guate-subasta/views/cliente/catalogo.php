@@ -33,19 +33,32 @@ sort($categorias_catalogo);
 </section>
 
 <div class="cards" id="contenedor-subastas">
-<?php foreach($subastas as $s): ?>
+<?php foreach($subastas as $s): 
+    // Validación de fecha dinámica: Fuerza el estado a cerrada si el tiempo ya se agotó
+    $esCerrada = in_array(strtolower($s['estado'] ?? ''), ['cerrada', 'finalizada']) || strtotime($s['fecha_fin']) <= time();
+    $estadoReal = $esCerrada ? 'cerrada' : (empty($s['estado']) ? 'activa' : strtolower($s['estado']));
+    
+    // Asignación de colores para las etiquetas
+    $colorBadge = '#16a34a'; // Verde para activa
+    if ($estadoReal === 'cerrada') $colorBadge = '#4b5563'; // Gris
+    if ($estadoReal === 'programada') $colorBadge = '#d97706'; // Naranja
+?>
   <article class="card item-subasta"
            data-nombre="<?=e(mb_strtolower($s['articulo'].' '.($s['descripcion'] ?? '')))?>"
-           data-categoria="<?=e(mb_strtolower($s['categoria']))?>"
-           data-estado="<?=e(mb_strtolower($s['estado']))?>">
-    <span class="badge"><?=e($s['estado'])?></span>
+           data-categoria="<?=e(mb_strtolower($s['categoria'] ?? ''))?>"
+           data-estado="<?=e($estadoReal)?>">
+    
+    <span class="badge" style="background: <?=$colorBadge?>; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; display: inline-block; margin-bottom: 10px; text-transform: capitalize;">
+      <?=e($estadoReal)?>
+    </span>
+    
     <h3><?=e($s['articulo'])?></h3>
-    <p><strong>Categoría:</strong> <?=e($s['categoria'])?></p>
-    <b>Q <?=number_format($s['monto_actual'], 2)?></b>
-    <p>Incremento mínimo: Q <?=number_format($s['incremento_minimo'], 2)?></p>
+    <p><strong>Categoría:</strong> <?=e($s['categoria'] ?? 'Sin categoría')?></p>
+    <b>Q <?=number_format($s['monto_actual'] ?? 0, 2)?></b>
+    <p>Incremento mínimo: Q <?=number_format($s['incremento_minimo'] ?? 0, 2)?></p>
     <p>Ofertas realizadas: <?=(int)($s['total_pujas'] ?? 0)?></p>
 
-    <?php if($s['estado'] === 'cerrada'): ?>
+    <?php if($estadoReal === 'cerrada'): ?>
       <p>
         <strong>Resultado:</strong>
         <?php if(!empty($s['lider_nombre'])): ?>
@@ -63,7 +76,7 @@ sort($categorias_catalogo);
     <div style="display:flex; gap:8px; margin-top:10px; align-items:center;">
       <a class="button" href="index.php?page=detalle&id=<?=(int)$s['id']?>">Ver detalles</a>
 
-      <?php if($s['estado'] === 'cerrada'): ?>
+      <?php if($estadoReal === 'cerrada'): ?>
         <form method="post" action="index.php?action=eliminar_subasta" onsubmit="return confirm('¿Seguro que deseas eliminar esta subasta cerrada?');" style="margin:0;">
           <input type="hidden" name="csrf" value="<?=csrf_token()?>">
           <input type="hidden" name="subasta_id" value="<?=(int)$s['id']?>">
