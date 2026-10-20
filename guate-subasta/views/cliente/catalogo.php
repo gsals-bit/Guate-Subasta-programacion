@@ -42,6 +42,9 @@ sort($categorias_catalogo);
     $colorBadge = '#16a34a'; // Verde para activa
     if ($estadoReal === 'cerrada') $colorBadge = '#4b5563'; // Gris
     if ($estadoReal === 'programada') $colorBadge = '#d97706'; // Naranja
+    
+    // Formatear la fecha a día/mes/año hora:minutos:segundos AM/PM
+    $fechaFormateada = date('d/m/Y h:i:s A', strtotime($s['fecha_fin']));
 ?>
   <article class="card item-subasta"
            data-nombre="<?=e(mb_strtolower($s['articulo'].' '.($s['descripcion'] ?? '')))?>"
@@ -71,7 +74,7 @@ sort($categorias_catalogo);
       <p><strong>Líder actual:</strong> <?=e($s['lider_nombre'])?></p>
     <?php endif; ?>
 
-    <p>Finaliza: <?=e($s['fecha_fin'])?></p>
+    <p>Finaliza: <?=e($fechaFormateada)?></p>
     
     <div style="display:flex; gap:8px; margin-top:10px; align-items:center;">
       <a class="button" href="index.php?page=detalle&id=<?=(int)$s['id']?>">Ver detalles</a>
