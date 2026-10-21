@@ -22,10 +22,10 @@ class Subasta {
         ")->fetchAll();
     }
 
-    public function find(int $id): ?array {
+  public function find(int $id): ?array {
         $this->actualizarEstados();
         $q = $this->db->prepare("
-            SELECT s.*, a.nombre AS articulo, a.descripcion, a.precio_base, a.imagen, a.categoria, a.certificado, a.creado_por
+            SELECT s.*, a.nombre AS articulo, a.descripcion, a.precio_base, a.imagen, a.categoria, a.modelo, a.creado_por
             FROM subastas s
             JOIN articulos a ON a.id = s.articulo_id
             WHERE s.id = ?

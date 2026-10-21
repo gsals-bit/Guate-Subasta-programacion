@@ -27,13 +27,13 @@ if ($action === 'articulo') {
     $categoria = trim($_POST['categoria']);
     $precioBase = (float)$_POST['precio_base'];
 
-    $ok = (new Articulo($db))->create([
+   $ok = (new Articulo($db))->create([
         'nombre' => $nombre,
         'categoria' => $categoria,
         'descripcion' => trim($_POST['descripcion']),
         'estado_fisico' => $_POST['estado_fisico'],
         'precio_base' => $precioBase,
-        'certificado' => trim($_POST['certificado']),
+        'modelo' => trim($_POST['modelo']), 
         'creado_por' => $_SESSION['user']['id']
     ]);
 

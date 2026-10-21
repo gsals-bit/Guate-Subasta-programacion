@@ -19,10 +19,10 @@ class Articulo {
         ")->fetchAll();
     }
 
-    public function create(array $d): bool {
-        $q = $this->db->prepare("INSERT INTO articulos(nombre,categoria,descripcion,estado_fisico,precio_base,certificado,creado_por)
+   public function create(array $d): bool {
+        $q = $this->db->prepare("INSERT INTO articulos(nombre,categoria,descripcion,estado_fisico,precio_base,modelo,creado_por)
         VALUES(?,?,?,?,?,?,?)");
-        return $q->execute([$d['nombre'],$d['categoria'],$d['descripcion'],$d['estado_fisico'],$d['precio_base'],$d['certificado'],$d['creado_por']]);
+        return $q->execute([$d['nombre'],$d['categoria'],$d['descripcion'],$d['estado_fisico'],$d['precio_base'],$d['modelo'],$d['creado_por']]);
     }
 
     public function eliminar(int $id): array {

@@ -55,8 +55,8 @@ sort($todas_categorias);
       <label>Precio base (Q)</label>
       <input type="number" step=".01" min="0.01" name="precio_base" required>
       
-      <label>Certificado (referencia)</label>
-      <input name="certificado">
+      <label>Modelo</label>
+<input name="modelo" placeholder="Ej: 2024, V5, etc.">
       
       <button type="submit">Guardar artículo</button>
     </form>

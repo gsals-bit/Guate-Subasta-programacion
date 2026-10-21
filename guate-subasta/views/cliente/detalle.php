@@ -25,7 +25,7 @@ $fechaInicioFormateada = date('d/m/Y h:i:s A', strtotime($subasta['fecha_inicio'
     
     <p><strong>Categoría:</strong> <?=e($subasta['categoria'])?></p>
     <p><strong>Descripción:</strong> <?=e($subasta['descripcion'])?></p>
-    <p><strong>Certificado:</strong> <?=e($subasta['certificado'] ?: 'N/A')?></p>
+    <p><strong>Modelo:</strong> <?=e($subasta['modelo'] ?: 'N/A')?></p>
     <hr style="margin:15px 0;">
     <p><strong>Finaliza:</strong> <?=e($fechaFinFormateada)?></p>
 
