@@ -1,4 +1,11 @@
 <?php
+date_default_timezone_set('America/Guatemala');
+session_start();
+require __DIR__.'/config/database.php';
+require __DIR__.'/config/helpers.php';
+
+foreach (glob(__DIR__.'/models/*.php') as $f) require $f;
+
 session_start();
 require __DIR__.'/config/database.php';
 require __DIR__.'/config/helpers.php';
