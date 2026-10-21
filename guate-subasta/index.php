@@ -1,16 +1,16 @@
 <?php
 date_default_timezone_set('America/Guatemala');
-session_start();
-require __DIR__.'/config/database.php';
-require __DIR__.'/config/helpers.php';
 
-foreach (glob(__DIR__.'/models/*.php') as $f) require $f;
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-session_start();
-require __DIR__.'/config/database.php';
-require __DIR__.'/config/helpers.php';
-foreach (glob(__DIR__.'/models/*.php') as $f) require$f;
-foreach (glob(__DIR__.'/controllers/*.php') as $f) require$f;
+require_once __DIR__.'/config/database.php';
+require_once __DIR__.'/config/helpers.php';
+
+foreach (glob(__DIR__.'/models/*.php') as $f) require_once $f;
+foreach (glob(__DIR__.'/controllers/*.php') as $f) require_once $f;
+
 $db = Database::connect();
 
 // Función auxiliar para registrar eventos en la bitácora de auditoría
