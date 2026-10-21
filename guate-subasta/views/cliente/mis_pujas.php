@@ -28,24 +28,17 @@ foreach ($pujas as $p) {
       <th>Acción</th>
     </tr>
     <?php foreach($pujas as $p): 
-      // 1. ¿Es esta fila la mejor oferta que ha hecho el usuario en esta subasta?
       $esMiMejorPuja = abs($maxPujasUsuario[$p['subasta_id']] - (float)$p['monto']) < 0.01;
-      
-      // 2. ¿La mejor oferta del usuario coincide con el precio ganador actual de la subasta?
       $esLiderGlobal = abs($maxPujasUsuario[$p['subasta_id']] - (float)$p['monto_actual']) < 0.01;
-      
-      // 3. ¿Es esta fila exactamente el precio ganador de la subasta?
       $esMaxima = abs((float)$p['monto'] - (float)$p['monto_actual']) < 0.01; 
       
       $cerrada = in_array(strtolower($p['estado']), ['cerrada', 'finalizada']) || strtotime($p['fecha_fin']) <= time();
       $estadoReal = $cerrada ? 'cerrada' : (empty($p['estado']) ? 'activa' : strtolower($p['estado']));
 
-      // Color de la etiqueta de estado de subasta
-      $bgEstado = '#16a34a'; // Verde para activa
-      if ($estadoReal === 'cerrada') $bgEstado = '#dc2626'; // Rojo para cerrada
-      if ($estadoReal === 'programada') $bgEstado = '#d97706'; // Naranja para programada
+      $bgEstado = '#16a34a'; 
+      if ($estadoReal === 'cerrada') $bgEstado = '#dc2626'; 
+      if ($estadoReal === 'programada') $bgEstado = '#d97706'; 
       
-      // Formatear la fecha a 12 horas con segundos
       $fechaFormateada = date('d/m/Y h:i:s A', strtotime($p['fecha']));
     ?>
       <tr>
@@ -90,7 +83,6 @@ foreach ($pujas as $p) {
         <td><?=e($fechaFormateada)?></td>
         <td>
           <?php 
-            // Solo permite mejorar si la subasta está activa, NO vas ganando Y es tu oferta más reciente/alta
             $mostrarMejorar = (!$cerrada && !$esLiderGlobal && $esMiMejorPuja); 
           ?>
           <a class="button" href="index.php?page=detalle&id=<?=(int)$p['subasta_id']?>" style="padding:6px 10px; font-size:0.9em;">
@@ -101,3 +93,12 @@ foreach ($pujas as $p) {
     <?php endforeach; ?>
   </table>
 <?php endif; ?>
+
+<script>
+// Forzar recarga si el usuario navega hacia esta pagina usando el boton "Atras" del navegador
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        window.location.reload();
+    }
+});
+</script>
