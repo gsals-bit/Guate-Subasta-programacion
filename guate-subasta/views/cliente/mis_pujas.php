@@ -1,5 +1,5 @@
 <?php
-// Pre-calcular la puja máxima del usuario por cada subasta para saber si actualmente va ganando en ella
+// Pre-calcular la puja máxima del usuario por cada subasta para saber cuál es su oferta principal
 $maxPujasUsuario = [];
 foreach ($pujas as $p) {
     $sid = $p['subasta_id'];
@@ -28,10 +28,14 @@ foreach ($pujas as $p) {
       <th>Acción</th>
     </tr>
     <?php foreach($pujas as $p): 
-      $esMaxima = abs((float)$p['monto'] - (float)$p['monto_actual']) < 0.01;
+      // 1. ¿Es esta fila la mejor oferta que ha hecho el usuario en esta subasta?
+      $esMiMejorPuja = abs($maxPujasUsuario[$p['subasta_id']] - (float)$p['monto']) < 0.01;
       
-      // Verifica si la puja máxima del usuario en esta subasta es la que va ganando
-      $esLiderActual = abs($maxPujasUsuario[$p['subasta_id']] - (float)$p['monto_actual']) < 0.01;
+      // 2. ¿La mejor oferta del usuario coincide con el precio ganador actual de la subasta?
+      $esLiderGlobal = abs($maxPujasUsuario[$p['subasta_id']] - (float)$p['monto_actual']) < 0.01;
+      
+      // 3. ¿Es esta fila exactamente el precio ganador de la subasta?
+      $esMaxima = abs((float)$p['monto'] - (float)$p['monto_actual']) < 0.01; 
       
       $cerrada = in_array(strtolower($p['estado']), ['cerrada', 'finalizada']) || strtotime($p['fecha_fin']) <= time();
       $estadoReal = $cerrada ? 'cerrada' : (empty($p['estado']) ? 'activa' : strtolower($p['estado']));
@@ -68,17 +72,17 @@ foreach ($pujas as $p) {
               </span>
             <?php endif; ?>
           <?php else: ?>
-            <?php if($esMaxima): ?>
+            <?php if($esLiderGlobal && $esMiMejorPuja): ?>
               <span style="background:#2563eb; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85em; font-weight:bold;">
                 Vas ganando
               </span>
-            <?php elseif($esLiderActual): ?>
-              <span style="background:#6b7280; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85em;">
-                Puja anterior (Lideras con otra)
-              </span>
-            <?php else: ?>
+            <?php elseif(!$esLiderGlobal && $esMiMejorPuja): ?>
               <span style="background:#d97706; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85em; font-weight:bold;">
                 Puja superada
+              </span>
+            <?php else: ?>
+              <span style="background:#6b7280; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85em;">
+                Puja anterior
               </span>
             <?php endif; ?>
           <?php endif; ?>
@@ -86,8 +90,8 @@ foreach ($pujas as $p) {
         <td><?=e($fechaFormateada)?></td>
         <td>
           <?php 
-            // Solo permite mejorar si la subasta está activa y el usuario NO es el líder actual
-            $mostrarMejorar = (!$cerrada && !$esLiderActual); 
+            // Solo permite mejorar si la subasta está activa, NO vas ganando Y es tu oferta más reciente/alta
+            $mostrarMejorar = (!$cerrada && !$esLiderGlobal && $esMiMejorPuja); 
           ?>
           <a class="button" href="index.php?page=detalle&id=<?=(int)$p['subasta_id']?>" style="padding:6px 10px; font-size:0.9em;">
             <?= $mostrarMejorar ? 'Mejorar puja' : 'Ver subasta' ?>
