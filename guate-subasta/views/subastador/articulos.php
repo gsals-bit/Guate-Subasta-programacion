@@ -27,40 +27,89 @@ sort($todas_categorias);
 <h1>Gestión de artículos</h1>
 <div class="grid2">
   <section class="panel">
-    <h2>Nuevo artículo</h2>
-    <form method="post" action="index.php?action=articulo">
-      <input type="hidden" name="csrf" value="<?=csrf_token()?>">
-      
-      <label>Nombre</label>
-      <input name="nombre" required>
-      
-      <label>Categoría <small style="opacity:0.7;">(Elige una sugerencia o escribe una nueva)</small></label>
-      <input name="categoria" id="input-categoria" list="lista-categorias" autocomplete="off" placeholder="Escribe ej: Construcción, Tecnología, Maquinaria..." required>
-      <datalist id="lista-categorias">
-        <?php foreach($todas_categorias as $cat): ?>
-          <option value="<?=e($cat)?>">
-        <?php endforeach; ?>
-      </datalist>
+  <h2>Nuevo artículo</h2>
+  <form method="post" action="index.php?action=articulo" enctype="multipart/form-data" id="form-articulo">
+    <input type="hidden" name="csrf" value="<?=csrf_token()?>">
+    
+    <label>Nombre</label>
+    <input name="nombre" required>
+    
+    <label>Categoría <small style="opacity:0.7;">(Elige una sugerencia o escribe una nueva)</small></label>
+    <input name="categoria" id="input-categoria" list="lista-categorias" autocomplete="off" placeholder="Escribe ej: Construcción, Tecnología, Maquinaria..." required>
+    <datalist id="lista-categorias">
+      <?php foreach($todas_categorias as $cat): ?>
+        <option value="<?=e($cat)?>">
+      <?php endforeach; ?>
+    </datalist>
+    
+    <label>Descripción</label>
+    <textarea name="descripcion" id="input-descripcion" maxlength="500" rows="4" required></textarea>
+    <div style="text-align:right; font-size:0.85em; opacity:0.7; margin-top:-10px; margin-bottom:15px;" id="contador-desc">0 / 500 caracteres</div>
+    
+    <label>Imágenes del artículo (Obligatorio, máximo 3 fotos)</label>
+    <input type="file" name="imagenes[]" id="input-imagenes" accept="image/jpeg, image/png, image/webp" multiple required style="margin-bottom:5px;">
+    <small style="display:block; margin-bottom:15px; opacity:0.7;">Formatos: JPG, PNG, WEBP. Tamaño máx: 2MB por imagen.</small>
 
-      <label>Descripción</label>
-      <textarea name="descripcion"></textarea>
-      
-      <label>Estado físico</label>
-      <select name="estado_fisico">
-        <option value="Excelente">Excelente</option>
-        <option value="Bueno">Bueno</option>
-        <option value="Regular">Regular</option>
-      </select>
-      
-      <label>Precio base (Q)</label>
-      <input type="number" step=".01" min="0.01" name="precio_base" required>
-      
-      <label>Modelo</label>
-<input name="modelo" placeholder="Ej: 2024, V5, etc.">
-      
-      <button type="submit">Guardar artículo</button>
-    </form>
-  </section>
+    <label>Estado físico</label>
+    <select name="estado_fisico" required>
+      <option value="Excelente">Excelente</option>
+      <option value="Bueno">Bueno</option>
+      <option value="Regular">Regular</option>
+    </select>
+    
+    <label>Precio base (Q)</label>
+    <input type="number" step=".01" min="0.01" name="precio_base" required>
+    
+    <label>Modelo</label>
+    <input name="modelo" placeholder="Ej: 2024, V5, etc.">
+    
+    <button type="submit">Guardar artículo</button>
+  </form>
+</section>
+
+<script>
+(function() {
+  // Lógica del contador de caracteres
+  const inputDesc = document.getElementById('input-descripcion');
+  const contadorDesc = document.getElementById('contador-desc');
+  
+  if (inputDesc && contadorDesc) {
+    inputDesc.addEventListener('input', function() {
+      const longitud = this.value.length;
+      contadorDesc.textContent = longitud + ' / 500 caracteres';
+      if (longitud >= 500) {
+        contadorDesc.style.color = '#dc2626'; // Rojo si llega al límite
+        contadorDesc.style.fontWeight = 'bold';
+      } else {
+        contadorDesc.style.color = 'inherit';
+        contadorDesc.style.fontWeight = 'normal';
+      }
+    });
+  }
+
+  // Lógica de validación de imágenes
+  const inputImg = document.getElementById('input-imagenes');
+  const form = document.getElementById('form-articulo');
+  
+  if (inputImg && form) {
+    inputImg.addEventListener('change', function() {
+      if (this.files.length > 3) {
+        alert('Por favor, selecciona un máximo de 3 imágenes.');
+        this.value = ''; // Resetea el campo si excede el límite
+      } else {
+        // Validar tamaño (2MB = 2097152 bytes)
+        for (let i = 0; i < this.files.length; i++) {
+          if (this.files[i].size > 2097152) {
+            alert('La imagen "' + this.files[i].name + '" supera el límite de 2MB.');
+            this.value = '';
+            break;
+          }
+        }
+      }
+    });
+  }
+})();
+</script>
 
   <section>
     <h2>Artículos registrados</h2>

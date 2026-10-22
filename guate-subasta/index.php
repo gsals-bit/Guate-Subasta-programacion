@@ -38,24 +38,63 @@ if ($action === 'articulo') {
     $nombre = trim($_POST['nombre']);
     $categoria = trim($_POST['categoria']);
     $precioBase = (float)$_POST['precio_base'];
+    $descripcion = mb_substr(trim($_POST['descripcion']), 0, 500); // Doble validación del límite
 
-   $ok = (new Articulo($db))->create([
+    // Procesamiento optimizado de imágenes
+    $imagenesSubidas = [];
+    $directorioSubidas = __DIR__ . '/uploads/';
+    
+    // Crea el directorio automáticamente si no existe
+    if (!is_dir($directorioSubidas)) {
+        mkdir($directorioSubidas, 0777, true);
+    }
+
+    if (!empty($_FILES['imagenes']['name'][0])) {
+        $totalArchivos = count($_FILES['imagenes']['name']);
+        $totalPermitido = min($totalArchivos, 3); // Límite estricto de 3 imágenes en backend
+
+        for ($i = 0; $i < $totalPermitido; $i++) {
+            $tmpName = $_FILES['imagenes']['tmp_name'][$i];
+            $error = $_FILES['imagenes']['error'][$i];
+            $size = $_FILES['imagenes']['size'][$i];
+            
+            // Validación de carga sin errores y límite de 2MB
+            if ($error === UPLOAD_ERR_OK && $size <= 2097152) {
+                $extension = strtolower(pathinfo($_FILES['imagenes']['name'][$i], PATHINFO_EXTENSION));
+                // Validación de formato seguro
+                if (in_array($extension, ['jpg', 'jpeg', 'png', 'webp'])) {
+                    // Genera un nombre único para evitar sobreescribir imágenes con el mismo nombre
+                    $nuevoNombre = uniqid('art_', true) . '.' . $extension;
+                    if (move_uploaded_file($tmpName, $directorioSubidas . $nuevoNombre)) {
+                        $imagenesSubidas[] = $nuevoNombre;
+                    }
+                }
+            }
+        }
+    }
+
+    // Convertimos el arreglo a JSON para guardarlo estructurado en la base de datos
+    $jsonImagenes = json_encode($imagenesSubidas);
+
+    $ok = (new Articulo($db))->create([
         'nombre' => $nombre,
         'categoria' => $categoria,
-        'descripcion' => trim($_POST['descripcion']),
+        'descripcion' => $descripcion,
         'estado_fisico' => $_POST['estado_fisico'],
         'precio_base' => $precioBase,
-        'modelo' => trim($_POST['modelo']), 
+        'modelo' => trim($_POST['modelo']),
+        'imagen' => $jsonImagenes,
         'creado_por' => $_SESSION['user']['id']
     ]);
 
-    if ($ok) {$registrarAuditoria('CREAR_ARTICULO', "Artículo: {$nombre} \vert{} Categoría: {$categoria} | Base: Q " . number_format($precioBase, 2));$_SESSION['flash'] = 'Artículo registrado.';
+    if ($ok) {
+        $registrarAuditoria('CREAR_ARTICULO', "Artículo: {$nombre} | Categoría: {$categoria} | Base: Q " . number_format($precioBase, 2));
+        $_SESSION['flash'] = 'Artículo registrado exitosamente con sus imágenes.';
     } else {
         $_SESSION['flash'] = 'No se pudo registrar el artículo.';
     }
     redirect('index.php?page=articulos');
 }
-
 // Permitimos programar la subasta validando fechas y disponibilidad
 if ($action === 'programar') {
     require_role(['Cliente','Subastador','Administrador']);
