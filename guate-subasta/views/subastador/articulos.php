@@ -1,5 +1,9 @@
 <?php
-$todas_categorias = array_unique(array_merge($categorias_base, $categorias_usadas ?? []));
+// Aseguramos que las variables existan como arreglos para evitar errores
+$categorias_base = $categorias_base ?? ['Accesorios', 'Arte', 'Audio y Sonido', 'Coleccionables', 'Tecnología', 'Vehículos'];
+$categorias_usadas = $categorias_usadas ?? [];
+
+$todas_categorias = array_unique(array_merge($categorias_base, $categorias_usadas));
 sort($todas_categorias);
 ?>
 <h1>Gestión de artículos</h1>
