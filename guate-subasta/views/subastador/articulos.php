@@ -1,5 +1,5 @@
 <?php
-// Aseguramos que las variables existan como arreglos para evitar errores
+//variables que sean como arreglos para evitar errores
 $categorias_base = $categorias_base ?? ['Accesorios', 'Arte', 'Audio y Sonido', 'Coleccionables', 'Tecnología', 'Vehículos'];
 $categorias_usadas = $categorias_usadas ?? [];
 
