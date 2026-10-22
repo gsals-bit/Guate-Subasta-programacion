@@ -1,8 +1,17 @@
 <?php
-//variables que sean como arreglos para evitar errores
-$categorias_base = $categorias_base ?? ['Accesorios', 'Arte', 'Audio y Sonido', 'Coleccionables', 'Tecnología', 'Vehículos'];
-$categorias_usadas = $categorias_usadas ?? [];
+// 1. Catálogo amplio de sugerencias base para subastas
+$categorias_base = [
+    'Accesorios', 'Antigüedades', 'Arte', 'Audio y Sonido', 'Coleccionables',
+    'Computación', 'Deportes', 'Electrodomésticos', 'Herramientas', 'Hogar',
+    'Inmuebles', 'Instrumentos Musicales', 'Joyería y Relojes', 'Juguetes',
+    'Libros y Cómics', 'Maquinaria', 'Moda y Ropa', 'Muebles', 
+    'Salud y Belleza', 'Tecnología', 'Vehículos', 'Videojuegos'
+];
 
+// 2. Extraer automáticamente las categorías personalizadas que ya están en uso
+$categorias_usadas = !empty($articulos) ? array_column($articulos, 'categoria') : [];
+
+// 3. Unir ambas listas, eliminar duplicados y ordenar alfabéticamente
 $todas_categorias = array_unique(array_merge($categorias_base, $categorias_usadas));
 sort($todas_categorias);
 ?>
