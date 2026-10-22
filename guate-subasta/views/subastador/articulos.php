@@ -26,7 +26,7 @@ sort($todas_categorias);
 ?>
 <h1>Gestión de artículos</h1>
 <div class="grid2">
-  <section class="panel">
+ <section class="panel">
   <h2>Nuevo artículo</h2>
   <form method="post" action="index.php?action=articulo" enctype="multipart/form-data" id="form-articulo">
     <input type="hidden" name="csrf" value="<?=csrf_token()?>">
@@ -43,8 +43,8 @@ sort($todas_categorias);
     </datalist>
     
     <label>Descripción</label>
-    <textarea name="descripcion" id="input-descripcion" maxlength="500" rows="4" required></textarea>
-    <div style="text-align:right; font-size:0.85em; opacity:0.7; margin-top:-10px; margin-bottom:15px;" id="contador-desc">0 / 500 caracteres</div>
+    <textarea name="descripcion" id="input-descripcion" maxlength="500" rows="4" required style="resize: none;"></textarea>
+    <div style="text-align:right; font-size:0.85em; color:#16a34a; margin-top:-10px; margin-bottom:15px;" id="contador-desc">0 / 500 caracteres</div>
     
     <label>Imágenes del artículo (Obligatorio, máximo 3 fotos)</label>
     <input type="file" name="imagenes[]" id="input-imagenes" accept="image/jpeg, image/png, image/webp" multiple required style="margin-bottom:5px;">
@@ -68,6 +68,54 @@ sort($todas_categorias);
 </section>
 
 <script>
+(function() {
+  // Lógica del contador de caracteres con colores dinámicos
+  const inputDesc = document.getElementById('input-descripcion');
+  const contadorDesc = document.getElementById('contador-desc');
+  
+  if (inputDesc && contadorDesc) {
+    inputDesc.addEventListener('input', function() {
+      const longitud = this.value.length;
+      contadorDesc.textContent = longitud + ' / 500 caracteres';
+      
+      if (longitud >= 450) {
+        // A punto de alcanzar el límite (Rojo)
+        contadorDesc.style.color = '#dc2626';
+        contadorDesc.style.fontWeight = 'bold';
+      } else if (longitud >= 250) {
+        // Progreso medio (Amarillo/Naranja)
+        contadorDesc.style.color = '#d97706';
+        contadorDesc.style.fontWeight = 'normal';
+      } else {
+        // Al principio (Verde)
+        contadorDesc.style.color = '#16a34a';
+        contadorDesc.style.fontWeight = 'normal';
+      }
+    });
+  }
+
+  // Lógica de validación de imágenes
+  const inputImg = document.getElementById('input-imagenes');
+  const form = document.getElementById('form-articulo');
+  
+  if (inputImg && form) {
+    inputImg.addEventListener('change', function() {
+      if (this.files.length > 3) {
+        alert('Por favor, selecciona un máximo de 3 imágenes.');
+        this.value = ''; 
+      } else {
+        for (let i = 0; i < this.files.length; i++) {
+          if (this.files[i].size > 2097152) {
+            alert('La imagen "' + this.files[i].name + '" supera el límite de 2MB.');
+            this.value = '';
+            break;
+          }
+        }
+      }
+    });
+  }
+})();
+</script>
 (function() {
   // Lógica del contador de caracteres
   const inputDesc = document.getElementById('input-descripcion');
