@@ -127,13 +127,30 @@ if ($action === 'eliminar_subasta') {
 
 // Acción para eliminar artículo
 if ($action === 'eliminar_articulo') {
-    require_role(['Cliente','Subastador','Administrador']);
+    require_role(['Cliente', 'Subastador', 'Administrador']);
     verify_csrf();
-    $articuloId = (int)($_POST['articulo_id'] ?? $_GET['id'] ?? 0);
-    [$ok,$msg] = (new Articulo($db))->eliminar($articuloId);
-    if ($ok) {$registrarAuditoria('ELIMINAR_ARTICULO', "Artículo eliminado ID #{$articuloId}");
+    $id = (int)$_POST['id'];
+
+    $artModel = new Articulo($db);
+    $articulo = $artModel->find($id);
+
+    // 1. Validar que el artículo exista
+    if (!$articulo) {
+        $_SESSION['flash'] = 'El artículo no existe o ya fue eliminado.';
+    } 
+    // 2. Validar que el usuario sea el dueño (o sea un Administrador)
+    elseif ($_SESSION['user']['rol'] !== 'Administrador' && (int)$articulo['creado_por'] !== (int)$_SESSION['user']['id']) {
+        $_SESSION['flash'] = 'Acceso denegado: Solo el creador del artículo puede eliminarlo.';
+    } 
+    // 3. Proceder con la eliminación segura
+    else {
+        $resultado = $artModel->eliminar($id);
+        $_SESSION['flash'] = $resultado[1]; // Mensaje real devuelto por el modelo
+        
+        if ($resultado[0] === true) {
+            $registrarAuditoria('ELIMINAR_ARTICULO', "Artículo eliminado: " . $articulo['nombre']);
+        }
     }
-    $_SESSION['flash'] =$msg;
     redirect('index.php?page=articulos');
 }
 // Acción para que el Administrador actualice rol y estado de un usuario

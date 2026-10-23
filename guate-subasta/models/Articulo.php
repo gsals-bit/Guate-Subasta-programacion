@@ -19,13 +19,21 @@ class Articulo {
         ")->fetchAll();
     }
 
-  public function create(array $d): bool {
+    public function create(array $d): bool {
         $q = $this->db->prepare("INSERT INTO articulos(nombre,categoria,descripcion,estado_fisico,precio_base,modelo,imagen,creado_por)
         VALUES(?,?,?,?,?,?,?,?)");
         return $q->execute([
             $d['nombre'], $d['categoria'], $d['descripcion'], $d['estado_fisico'],
             $d['precio_base'], $d['modelo'], $d['imagen'], $d['creado_por']
         ]);
+    }
+
+    // --- NUEVO MÉTODO AÑADIDO ---
+    // Extrae los datos del artículo para que el controlador valide quién es el dueño
+    public function find(int $id): ?array {
+        $q = $this->db->prepare("SELECT * FROM articulos WHERE id = ?");
+        $q->execute([$id]);
+        return $q->fetch() ?: null;
     }
 
     public function eliminar(int $id): array {

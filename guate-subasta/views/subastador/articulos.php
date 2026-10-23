@@ -78,12 +78,19 @@ sort($todas_categorias);
             <td><?=e($a['categoria'])?></td>
             <td>Q <?=number_format($a['precio_base'], 2)?></td>
             <td><?=e($a['estado'] ?? 'validado')?></td>
-            <td>
-              <form method="post" action="index.php?action=eliminar_articulo" onsubmit="return confirm('¿Seguro que deseas eliminar este artículo?');" style="margin:0;">
-                <input type="hidden" name="csrf" value="<?=csrf_token()?>">
-                <input type="hidden" name="id" value="<?=(int)$a['id']?>">
-                <button type="submit" style="background:#dc2626; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Eliminar</button>
-              </form>
+           <td>
+              <?php 
+                // Verificar si es administrador o si es el dueño exacto del artículo
+                if($_SESSION['user']['rol'] === 'Administrador' || (isset($a['creado_por']) && (int)$a['creado_por'] === (int)$_SESSION['user']['id'])): 
+              ?>
+                <form method="post" action="index.php?action=eliminar_articulo" onsubmit="return confirm('¿Seguro que deseas eliminar este artículo?');" style="margin:0;">
+                  <input type="hidden" name="csrf" value="<?=csrf_token()?>">
+                  <input type="hidden" name="id" value="<?=(int)$a['id']?>">
+                  <button type="submit" style="background:#dc2626; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Eliminar</button>
+                </form>
+              <?php else: ?>
+                <span style="color:#9ca3af; font-size:0.85em; font-style:italic;">Solo propietario</span>
+              <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>
