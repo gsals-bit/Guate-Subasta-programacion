@@ -38,7 +38,17 @@ class Subasta {
         if (strtotime($fin) <= strtotime($inicio)) {
             return false;
         }
-        // Evitar duplicar subasta activa o programada para el mismo artículo
+
+        $usuarioActual = (int)($_SESSION['user']['id'] ?? 0);
+
+        // 1. Verificar que el artículo pertenezca al usuario que intenta programar la subasta
+        $own = $this->db->prepare("SELECT COUNT(*) FROM articulos WHERE id = ? AND creado_por = ?");
+        $own->execute([$articulo, $usuarioActual]);
+        if ($own->fetchColumn() == 0) {
+            return false;
+        }
+
+        // 2. Evitar duplicar subasta activa o programada para el mismo artículo
         $chk = $this->db->prepare("SELECT COUNT(*) FROM subastas WHERE articulo_id = ? AND estado IN ('programada','activa') AND fecha_fin > NOW()");
         $chk->execute([$articulo]);
         if ($chk->fetchColumn() > 0) {
@@ -47,11 +57,14 @@ class Subasta {
 
         $q = $this->db->prepare("
             INSERT INTO subastas(articulo_id, fecha_inicio, fecha_fin, incremento_minimo, monto_actual, estado)
-            SELECT id, ?, ?, ?, precio_base, 'programada' FROM articulos WHERE id = ?
+            SELECT id, ?, ?, ?, precio_base, 'programada' FROM articulos WHERE id = ? AND creado_por = ?
         ");
-        $ok = $q->execute([$inicio, $fin, $inc, $articulo]);
-        $this->actualizarEstados();
-        return $ok;
+        $ok = $q->execute([$inicio, $fin, $inc, $articulo, $usuarioActual]);
+        if ($ok && $q->rowCount() > 0) {
+            $this->actualizarEstados();
+            return true;
+        }
+        return false;
     }
 
     public function eliminarCerrada(int $id): array {
