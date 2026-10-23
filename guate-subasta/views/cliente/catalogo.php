@@ -58,7 +58,7 @@ sort($categorias_catalogo);
     
     <!-- Renderizado de la imagen de portada -->
     <?php if($imagenPrincipal): ?>
-      <img src="<?=e($imagenPrincipal)?>" alt="Imagen de <?=e($s['articulo'])?>" style="width:100%; height:200px; object-fit:cover; border-radius:6px; margin-bottom:12px; border:1px solid #e5e7eb;">
+      <img src="<?=e($imagenPrincipal)?>" alt="Imagen de <?=e($s['articulo'])?>" style="width:100%; height:200px; object-fit:contain; background-color:#ffffff; padding:8px; box-sizing:border-box; border-radius:6px; margin-bottom:12px; border:1px solid #e5e7eb;">
     <?php else: ?>
       <div style="width:100%; height:200px; background:#f3f4f6; border-radius:6px; margin-bottom:12px; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-style:italic; border:1px solid #e5e7eb;">Sin imagen</div>
     <?php endif; ?>
