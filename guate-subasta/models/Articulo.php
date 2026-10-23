@@ -3,7 +3,18 @@ class Articulo {
     public function __construct(private PDO $db) {}
 
     public function all(): array {
-        return $this->db->query("SELECT * FROM articulos ORDER BY id DESC")->fetchAll();
+        // Sincronizar estados de subastas antes de consultar
+        $this->db->query("UPDATE subastas SET estado='activa' WHERE estado='programada' AND fecha_inicio <= NOW() AND fecha_fin > NOW()");
+        $this->db->query("UPDATE subastas SET estado='cerrada' WHERE estado IN ('programada','activa') AND fecha_fin <= NOW()");
+
+        return $this->db->query("
+            SELECT a.*,
+                   (SELECT s.id FROM subastas s WHERE s.articulo_id = a.id ORDER BY s.id DESC LIMIT 1) AS subasta_id,
+                   (SELECT s.estado FROM subastas s WHERE s.articulo_id = a.id ORDER BY s.id DESC LIMIT 1) AS subasta_estado,
+                   (SELECT s.fecha_fin FROM subastas s WHERE s.articulo_id = a.id ORDER BY s.id DESC LIMIT 1) AS subasta_fecha_fin
+            FROM articulos a
+            ORDER BY a.id DESC
+        ")->fetchAll();
     }
 
     public function disponiblesParaSubasta(): array {
@@ -28,8 +39,6 @@ class Articulo {
         ]);
     }
 
-    // --- NUEVO MÉTODO AÑADIDO ---
-    // Extrae los datos del artículo para que el controlador valide quién es el dueño
     public function find(int $id): ?array {
         $q = $this->db->prepare("SELECT * FROM articulos WHERE id = ?");
         $q->execute([$id]);
@@ -37,7 +46,6 @@ class Articulo {
     }
 
     public function eliminar(int $id): array {
-        // Verifica si tiene subastas activas o programadas
         $q = $this->db->prepare("SELECT COUNT(*) FROM subastas WHERE articulo_id = ? AND estado IN ('programada','activa') AND fecha_fin > NOW()");
         $q->execute([$id]);
         if ($q->fetchColumn() > 0) {
