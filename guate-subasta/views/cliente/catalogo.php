@@ -34,26 +34,34 @@ sort($categorias_catalogo);
 
 <div class="cards" id="contenedor-subastas">
 <?php foreach($subastas as $s): 
-    // Validación de fecha dinámica: Fuerza el estado a cerrada si el tiempo ya se agotó
     $esCerrada = in_array(strtolower($s['estado'] ?? ''), ['cerrada', 'finalizada']) || strtotime($s['fecha_fin']) <= time();
     $estadoReal = $esCerrada ? 'cerrada' : (empty($s['estado']) ? 'activa' : strtolower($s['estado']));
     
-    // Asignación de colores para las etiquetas
-    $colorBadge = '#16a34a'; // Verde para activa
-    if ($estadoReal === 'cerrada') $colorBadge = '#4b5563'; // Gris
-    if ($estadoReal === 'programada') $colorBadge = '#d97706'; // Naranja
+    $colorBadge = '#16a34a'; 
+    if ($estadoReal === 'cerrada') $colorBadge = '#dc2626'; 
+    if ($estadoReal === 'programada') $colorBadge = '#d97706'; 
     
-    // Formatear la fecha a día/mes/año hora:minutos:segundos AM/PM
     $fechaFormateada = date('d/m/Y h:i:s A', strtotime($s['fecha_fin']));
+    
+    // Decodificar el JSON de imágenes y obtener la primera
+    $imagenes = json_decode($s['imagen'] ?? '[]', true);
+    $imagenPrincipal = (!empty($imagenes) && is_array($imagenes)) ? 'uploads/' . $imagenes[0] : null;
 ?>
   <article class="card item-subasta"
            data-nombre="<?=e(mb_strtolower($s['articulo'].' '.($s['descripcion'] ?? '')))?>"
            data-categoria="<?=e(mb_strtolower($s['categoria'] ?? ''))?>"
            data-estado="<?=e($estadoReal)?>">
     
-    <span class="badge" style="background: <?=$colorBadge?>; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; display: inline-block; margin-bottom: 10px; text-transform: capitalize;">
+    <span class="badge" style="background: <?=$colorBadge?>; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; display: inline-block; margin-bottom: 15px; text-transform: capitalize;">
       <?=e($estadoReal)?>
     </span>
+    
+    <!-- Renderizado de la imagen de portada -->
+    <?php if($imagenPrincipal): ?>
+      <img src="<?=e($imagenPrincipal)?>" alt="Imagen de <?=e($s['articulo'])?>" style="width:100%; height:200px; object-fit:cover; border-radius:6px; margin-bottom:12px; border:1px solid #e5e7eb;">
+    <?php else: ?>
+      <div style="width:100%; height:200px; background:#f3f4f6; border-radius:6px; margin-bottom:12px; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-style:italic; border:1px solid #e5e7eb;">Sin imagen</div>
+    <?php endif; ?>
     
     <h3><?=e($s['articulo'])?></h3>
     <p><strong>Categoría:</strong> <?=e($s['categoria'] ?? 'Sin categoría')?></p>
@@ -79,7 +87,7 @@ sort($categorias_catalogo);
     <div style="display:flex; gap:8px; margin-top:10px; align-items:center;">
       <a class="button" href="index.php?page=detalle&id=<?=(int)$s['id']?>">Ver detalles</a>
 
-      <?php if($estadoReal === 'cerrada'): ?>
+      <?php if($estadoReal === 'cerrada' && in_array($_SESSION['user']['rol'], ['Subastador', 'Administrador'])): ?>
         <form method="post" action="index.php?action=eliminar_subasta" onsubmit="return confirm('¿Seguro que deseas eliminar esta subasta cerrada?');" style="margin:0;">
           <input type="hidden" name="csrf" value="<?=csrf_token()?>">
           <input type="hidden" name="subasta_id" value="<?=(int)$s['id']?>">

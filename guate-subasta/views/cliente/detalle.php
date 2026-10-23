@@ -2,18 +2,18 @@
 $lider = $historial[0] ?? null;
 $esPropietario = isset($_SESSION['user']['id'], $subasta['creado_por']) && ((int)$_SESSION['user']['id'] === (int)$subasta['creado_por']);
 
-// Validación dinámica de estado por tiempo (Igual que en el catálogo)
 $esCerrada = in_array(strtolower($subasta['estado'] ?? ''), ['cerrada', 'finalizada']) || strtotime($subasta['fecha_fin']) <= time();
 $estadoReal = $esCerrada ? 'cerrada' : (empty($subasta['estado']) ? 'activa' : strtolower($subasta['estado']));
 
-// Asignación de colores para las etiquetas
 $colorBadge = '#16a34a'; 
-if ($estadoReal === 'cerrada') $colorBadge = '#4b5563'; 
+if ($estadoReal === 'cerrada') $colorBadge = '#dc2626'; 
 if ($estadoReal === 'programada') $colorBadge = '#d97706'; 
 
-// Formatear las fechas a formato de 12 horas con segundos
 $fechaFinFormateada = date('d/m/Y h:i:s A', strtotime($subasta['fecha_fin']));
 $fechaInicioFormateada = date('d/m/Y h:i:s A', strtotime($subasta['fecha_inicio']));
+
+// Extraer el arreglo de imágenes
+$imagenes = json_decode($subasta['imagen'] ?? '[]', true);
 ?>
 <div class="grid2">
   <section class="panel">
@@ -22,6 +22,17 @@ $fechaInicioFormateada = date('d/m/Y h:i:s A', strtotime($subasta['fecha_inicio'
     <span class="badge" style="background: <?=$colorBadge?>; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; display: inline-block; text-transform: capitalize; margin-bottom: 10px;">
       <?=e($estadoReal)?>
     </span>
+
+    <!-- Galería horizontal de imágenes -->
+    <?php if(!empty($imagenes) && is_array($imagenes)): ?>
+      <div style="display:flex; gap:10px; margin: 15px 0; overflow-x:auto; padding-bottom:10px;">
+        <?php foreach($imagenes as $img): ?>
+          <img src="uploads/<?=e($img)?>" alt="Imagen de <?=e($subasta['articulo'])?>" style="height: 250px; width: auto; max-width: 100%; border-radius: 6px; object-fit: cover; border: 1px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <?php endforeach; ?>
+      </div>
+    <?php else: ?>
+       <div style="width:100%; height:150px; background:#f3f4f6; border-radius:6px; margin:15px 0; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-style:italic; border:1px solid #e5e7eb;">Sin imágenes registradas</div>
+    <?php endif; ?>
     
     <p><strong>Categoría:</strong> <?=e($subasta['categoria'])?></p>
     <p><strong>Descripción:</strong> <?=e($subasta['descripcion'])?></p>
@@ -29,7 +40,6 @@ $fechaInicioFormateada = date('d/m/Y h:i:s A', strtotime($subasta['fecha_inicio'
     <hr style="margin:15px 0;">
     <p><strong>Finaliza:</strong> <?=e($fechaFinFormateada)?></p>
 
-    <!-- Solo muestra el contador si realmente está activa o programada -->
     <?php if($estadoReal !== 'cerrada'): ?>
       <p><strong>Tiempo restante:</strong> <span id="contador-subasta" data-fin="<?=e(str_replace(' ', 'T', $subasta['fecha_fin']))?>" style="font-weight:bold; color:#fbbf24;">Calculando...</span></p>
     <?php endif; ?>
@@ -72,7 +82,7 @@ $fechaInicioFormateada = date('d/m/Y h:i:s A', strtotime($subasta['fecha_inicio'
       </div>
     <?php endif; ?>
 
-    <?php if($estadoReal === 'cerrada' && in_array($_SESSION['user']['rol'], ['Cliente', 'Subastador', 'Administrador'])): ?>
+    <?php if($estadoReal === 'cerrada' && in_array($_SESSION['user']['rol'], ['Subastador', 'Administrador'])): ?>
       <form method="post" action="index.php?action=eliminar_subasta" onsubmit="return confirm('¿Seguro que deseas eliminar esta subasta cerrada?');" style="margin-top:15px;">
         <input type="hidden" name="csrf" value="<?=csrf_token()?>">
         <input type="hidden" name="subasta_id" value="<?=(int)$subasta['id']?>">
@@ -96,7 +106,6 @@ $fechaInicioFormateada = date('d/m/Y h:i:s A', strtotime($subasta['fecha_inicio'
         <?php foreach($historial as $index => $h): ?>
           <tr>
             <td><?= $index === 0 ? '<strong>1 (Líder)</strong>' : ($index + 1) ?></td>
-            <!-- Se formatea la fecha del historial de pujas -->
             <td><?=e(date('d/m/Y h:i:s A', strtotime($h['fecha'])))?></td>
             <td><?=e($h['usuario'])?></td>
             <td>Q <?=number_format($h['monto'], 2)?></td>
@@ -107,7 +116,6 @@ $fechaInicioFormateada = date('d/m/Y h:i:s A', strtotime($subasta['fecha_inicio'
   </section>
 </div>
 
-<!-- El script Javascript solo existirá si la subasta sigue abierta, evitando bucles infinitos -->
 <?php if($estadoReal !== 'cerrada'): ?>
 <script>
 (function() {
