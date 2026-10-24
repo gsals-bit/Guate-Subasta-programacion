@@ -2,7 +2,7 @@
 class Database {
     public static function connect(): PDO {
         $host = 'localhost';
-        $db   = 'guate_subasta';
+        $db   = 'guate_subasta_lab';
         $user = 'root';
         $pass = '';
         $dsn = "mysql:host=$host;dbname=$db;charset=utf8mb4";

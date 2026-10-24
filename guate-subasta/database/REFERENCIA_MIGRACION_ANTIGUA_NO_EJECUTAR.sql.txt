@@ -1,0 +1,26 @@
+-- Ejecutar UNA SOLA VEZ en guate_subasta. Hacer respaldo antes.
+-- No ejecuta DROP TABLE ni elimina datos existentes.
+USE guate_subasta;
+ALTER TABLE articulos ADD COLUMN modelo VARCHAR(150) NULL;
+-- Si la columna modelo ya existe, OMITIR el ALTER anterior.
+CREATE TABLE IF NOT EXISTS billeteras_tokens (
+ usuario_id INT PRIMARY KEY,
+ saldo BIGINT NOT NULL DEFAULT 100000,
+ FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+ CHECK(saldo >= 0)
+) ENGINE=InnoDB;
+INSERT INTO billeteras_tokens(usuario_id,saldo)
+SELECT u.id,100000 FROM usuarios u
+LEFT JOIN billeteras_tokens b ON b.usuario_id=u.id
+WHERE b.usuario_id IS NULL;
+CREATE TABLE IF NOT EXISTS compras_tokens (
+ id BIGINT AUTO_INCREMENT PRIMARY KEY,
+ subasta_id INT NOT NULL UNIQUE,
+ usuario_id INT NOT NULL,
+ tokens_gastados BIGINT NOT NULL,
+ fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(subasta_id) REFERENCES subastas(id),
+ FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+-- El codigo utiliza estado 'cerrada' que falta en el SQL original.
+ALTER TABLE subastas MODIFY estado ENUM('programada','activa','cerrada','finalizada','cancelada') DEFAULT 'programada';
