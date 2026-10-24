@@ -17,6 +17,18 @@ foreach (glob(__DIR__.'/models/*.php') as $f) require_once $f;
 foreach (glob(__DIR__.'/controllers/*.php') as $f) require_once $f;
 
 $db = Database::connect();
+// Revalidar la cuenta en cada solicitud: bloquea usuarios desactivados y roles antiguos.
+if (!empty($_SESSION['user']['id'])) {
+    $q = $db->prepare("SELECT u.id,u.nombre,u.email,r.nombre AS rol FROM usuarios u JOIN roles r ON r.id=u.rol_id WHERE u.id=? AND u.activo=1");
+    $q->execute([(int)$_SESSION['user']['id']]);
+    $actual = $q->fetch();
+    if (!$actual) {
+        unset($_SESSION['user']);
+    } else {
+        $_SESSION['user'] = $actual;
+    }
+}
+
 
 // Función auxiliar para registrar eventos en la bitácora de auditoría
 $registrarAuditoria = function(string$evento, string $detalle) use ($db): void {
@@ -30,6 +42,14 @@ $action =$_GET['action'] ?? '';
 if ($action === 'login') (new AuthController($db))->login();
 if ($action === 'registro') (new AuthController($db))->registro();
 if ($action === 'pujar') (new PujaController($db))->crear();
+if ($action === 'comprar_tokens') {
+    require_role(['Cliente']); verify_csrf();
+    $sid=(int)($_POST['subasta_id'] ?? 0);
+    [$ok,$msg]=(new Token($db))->comprar($sid,(int)$_SESSION['user']['id']);
+    $_SESSION['flash']=$msg;
+    redirect('index.php?page=detalle&id='.$sid);
+}
+
 
 // Permitimos que Cliente (Pujador), Subastador y Administrador ingresen productos
 if ($action === 'articulo') {
@@ -118,7 +138,7 @@ if ($action === 'eliminar_subasta') {
     require_role(['Cliente','Subastador','Administrador']);
     verify_csrf();
     $subastaId = (int)($_POST['subasta_id'] ?? $_GET['id'] ?? 0);
-    [$ok,$msg] = (new Subasta($db))->eliminarCerrada($subastaId);
+    [$ok,$msg] = (new Subasta($db))->eliminarCerrada($subastaId, (int)$_SESSION['user']['id'], $_SESSION['user']['rol'] === 'Administrador');
     if ($ok) {$registrarAuditoria('ELIMINAR_SUBASTA', "Subasta cerrada eliminada ID #{$subastaId}");
     }
     $_SESSION['flash'] =$msg;
@@ -163,7 +183,7 @@ if ($action === 'actualizar_usuario') {
     $rolesValidos = ['Cliente', 'Subastador', 'Auditor', 'Administrador'];
 
     if ($uid > 0 && $uid !== (int)$_SESSION['user']['id'] && in_array($nuevoRol, $rolesValidos, true)) {
-        $q = $db->prepare("UPDATE usuarios SET rol = ?, activo = ? WHERE id = ?");
+        $q = $db->prepare("UPDATE usuarios SET rol_id = (SELECT id FROM roles WHERE nombre = ?), activo = ? WHERE id = ?");
         $q->execute([$nuevoRol, $nuevoActivo, $uid]);
         $estadoTxt = $nuevoActivo ? 'Activo' : 'Inactivo';
         $registrarAuditoria('ACTUALIZAR_USUARIO', "Usuario ID #{$uid} actualizado a Rol: {$nuevoRol} | Estado: {$estadoTxt}");
@@ -173,6 +193,22 @@ if ($action === 'actualizar_usuario') {
     }
     redirect('index.php?page=usuarios');
 }
+
+// Eliminación lógica: preserva historial de pujas, subastas y auditoría.
+if ($action === 'eliminar_usuario') {
+    require_role(['Administrador']); verify_csrf();
+    $uid = (int)($_POST['usuario_id'] ?? 0);
+    if ($uid <= 0 || $uid === (int)$_SESSION['user']['id']) {
+        $_SESSION['flash'] = 'No puedes eliminar tu propia cuenta.';
+    } else {
+        $q = $db->prepare('UPDATE usuarios SET activo=0 WHERE id=?');
+        $q->execute([$uid]);
+        $registrarAuditoria('DESACTIVAR_USUARIO', "Cuenta ID #{$uid} desactivada por administrador");
+        $_SESSION['flash'] = 'Cuenta desactivada. El usuario ya no puede iniciar sesión.';
+    }
+    redirect('index.php?page=usuarios');
+}
+
 $page = $_GET['page'] ?? (empty($_SESSION['user']) ? 'login' : 'dashboard');
 if ($page === 'logout') (new AuthController($db))->logout();
 
@@ -193,6 +229,9 @@ switch ($page) {
         require_login();
         $subasta = (new Subasta($db))->find((int)($_GET['id'] ?? 0));
         if (!$subasta) { echo 'Subasta no encontrada.'; break; }$historial = (new Puja($db))->historialSubasta($subasta['id']);
+        $saldoTokens = (new Token($db))->saldo((int)$_SESSION['user']['id']);
+        $compraQ=$db->prepare('SELECT usuario_id FROM compras_tokens WHERE subasta_id=?');
+        $compraQ->execute([(int)$subasta['id']]); $compraUsuario=$compraQ->fetchColumn();
         require __DIR__.'/views/cliente/detalle.php';
         break;
     case 'mis-pujas':
@@ -202,12 +241,12 @@ switch ($page) {
         break;
     case 'articulos':
         require_role(['Cliente','Subastador','Administrador']);
-        $articulos = (new Articulo($db))->all();
+        $articulos = (new Articulo($db))->all((int)$_SESSION['user']['id']);
         require __DIR__.'/views/subastador/articulos.php';
         break;
     case 'programar':
         require_role(['Cliente','Subastador','Administrador']);
-        $articulos = (new Articulo($db))->disponiblesParaSubasta();
+        $articulos = (new Articulo($db))->disponiblesParaSubasta((int)$_SESSION['user']['id']);
         require __DIR__.'/views/subastador/programar.php';
         break;
     case 'usuarios':

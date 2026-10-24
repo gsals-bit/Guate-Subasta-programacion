@@ -82,6 +82,11 @@ $idSesionActual = (int)($_SESSION['user']['id'] ?? 0);
             </select>
             <button type="submit" style="padding:6px 12px; margin:0;">Guardar</button>
           </form>
+          <form method="post" action="index.php?action=eliminar_usuario" onsubmit="return confirm('¿Desactivar este usuario? Se conservará el historial.');">
+            <input type="hidden" name="csrf" value="<?=csrf_token()?>">
+            <input type="hidden" name="usuario_id" value="<?=(int)$u['id']?>">
+            <button type="submit" style="background:#b91c1c;color:white;">Eliminar acceso</button>
+          </form>
         <?php endif; ?>
       </td>
     </tr>

@@ -8,7 +8,13 @@ class Usuario {
     public function create(string $nombre,string $email,string $password): bool {
         $rol=$this->db->query("SELECT id FROM roles WHERE nombre='Cliente'")->fetchColumn();
         $q=$this->db->prepare("INSERT INTO usuarios(nombre,email,password_hash,rol_id) VALUES(?,?,?,?)");
-        return $q->execute([$nombre,$email,password_hash($password,PASSWORD_DEFAULT),$rol]);
+        $this->db->beginTransaction();
+        try {
+            $ok=$q->execute([$nombre,$email,password_hash($password,PASSWORD_DEFAULT),$rol]);
+            $id=(int)$this->db->lastInsertId();
+            $this->db->prepare('INSERT INTO billeteras_tokens(usuario_id,saldo) VALUES(?,100000)')->execute([$id]);
+            $this->db->commit(); return $ok;
+        } catch(Throwable $e) { $this->db->rollBack(); throw $e; }
     }
     public function all(): array {
         return $this->db->query("SELECT u.id,u.nombre,u.email,r.nombre rol,u.activo,u.creado_en FROM usuarios u JOIN roles r ON r.id=u.rol_id ORDER BY u.id DESC")->fetchAll();

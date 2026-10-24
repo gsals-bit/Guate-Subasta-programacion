@@ -87,7 +87,7 @@ sort($categorias_catalogo);
     <div style="display:flex; gap:8px; margin-top:10px; align-items:center;">
       <a class="button" href="index.php?page=detalle&id=<?=(int)$s['id']?>">Ver detalles</a>
 
-      <?php if($estadoReal === 'cerrada' && in_array($_SESSION['user']['rol'], ['Subastador', 'Administrador'])): ?>
+      <?php if($estadoReal === 'cerrada' && (($_SESSION['user']['rol'] === 'Administrador') || ((int)($s['creado_por'] ?? 0) === (int)$_SESSION['user']['id']))): ?>
         <form method="post" action="index.php?action=eliminar_subasta" onsubmit="return confirm('¿Seguro que deseas eliminar esta subasta cerrada?');" style="margin:0;">
           <input type="hidden" name="csrf" value="<?=csrf_token()?>">
           <input type="hidden" name="subasta_id" value="<?=(int)$s['id']?>">

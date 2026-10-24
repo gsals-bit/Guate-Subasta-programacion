@@ -67,16 +67,20 @@ class Subasta {
         return false;
     }
 
-    public function eliminarCerrada(int $id): array {
+    public function eliminarCerrada(int $id, int $usuarioId, bool $admin = false): array {
         $this->actualizarEstados();
         $subasta = $this->find($id);
         if (!$subasta) {
             return [false, 'La subasta no existe.'];
         }
+        if (!$admin && (int)$subasta['creado_por'] !== $usuarioId) return [false, 'Solo el dueño puede eliminar esta subasta.'];
         if ($subasta['estado'] !== 'cerrada' && strtotime($subasta['fecha_fin']) > time()) {
             return [false, 'No puedes eliminar una subasta que aún está activa o programada.'];
         }
 
+        $qCompra = $this->db->prepare("SELECT COUNT(*) FROM compras_tokens WHERE subasta_id = ?");
+        $qCompra->execute([$id]);
+        if ($qCompra->fetchColumn() > 0) return [false, 'No se puede eliminar una subasta con compra registrada.'];
         try {
             $this->db->beginTransaction();
             $delPujas = $this->db->prepare("DELETE FROM pujas WHERE subasta_id = ?");

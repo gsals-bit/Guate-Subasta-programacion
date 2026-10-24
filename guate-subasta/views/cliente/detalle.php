@@ -44,6 +44,7 @@ $imagenes = json_decode($subasta['imagen'] ?? '[]', true);
       <p><strong>Tiempo restante:</strong> <span id="contador-subasta" data-fin="<?=e(str_replace(' ', 'T', $subasta['fecha_fin']))?>" style="font-weight:bold; color:#fbbf24;">Calculando...</span></p>
     <?php endif; ?>
 
+    <p><strong>Saldo de tokens de prueba:</strong> <?=number_format($saldoTokens ?? 0,0)?> (1 token = Q1, solo simulación académica).</p>
     <h3>Precio Actual: Q <?=number_format($subasta['monto_actual'], 2)?></h3>
     <p><small>Incremento mínimo requerido: Q <?=number_format($subasta['incremento_minimo'], 2)?></small></p>
 
@@ -82,7 +83,18 @@ $imagenes = json_decode($subasta['imagen'] ?? '[]', true);
       </div>
     <?php endif; ?>
 
-    <?php if($estadoReal === 'cerrada' && in_array($_SESSION['user']['rol'], ['Subastador', 'Administrador'])): ?>
+    <?php if($esCerrada && $lider && (int)($lider['usuario_id'] ?? 0) === (int)$_SESSION['user']['id']): ?>
+      <?php if($compraUsuario): ?>
+        <p><strong>Compra de prueba registrada.</strong></p>
+      <?php else: ?>
+        <form method="post" action="index.php?action=comprar_tokens">
+          <input type="hidden" name="csrf" value="<?=csrf_token()?>">
+          <input type="hidden" name="subasta_id" value="<?=(int)$subasta['id']?>">
+          <button type="submit">Comprar con <?=number_format(ceil((float)$lider['monto']),0)?> tokens (simulación)</button>
+        </form>
+      <?php endif; ?>
+    <?php endif; ?>
+    <?php if($estadoReal === 'cerrada' && (($_SESSION['user']['rol'] === 'Administrador') || $esPropietario)): ?>
       <form method="post" action="index.php?action=eliminar_subasta" onsubmit="return confirm('¿Seguro que deseas eliminar esta subasta cerrada?');" style="margin-top:15px;">
         <input type="hidden" name="csrf" value="<?=csrf_token()?>">
         <input type="hidden" name="subasta_id" value="<?=(int)$subasta['id']?>">

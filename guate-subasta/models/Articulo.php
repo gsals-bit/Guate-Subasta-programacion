@@ -2,32 +2,36 @@
 class Articulo {
     public function __construct(private PDO $db) {}
 
-    public function all(): array {
+    public function all(?int $ownerId = null): array {
         // Sincronizar estados de subastas antes de consultar
         $this->db->query("UPDATE subastas SET estado='activa' WHERE estado='programada' AND fecha_inicio <= NOW() AND fecha_fin > NOW()");
         $this->db->query("UPDATE subastas SET estado='cerrada' WHERE estado IN ('programada','activa') AND fecha_fin <= NOW()");
 
-        return $this->db->query("
+        $sql = "
             SELECT a.*,
                    (SELECT s.id FROM subastas s WHERE s.articulo_id = a.id ORDER BY s.id DESC LIMIT 1) AS subasta_id,
                    (SELECT s.estado FROM subastas s WHERE s.articulo_id = a.id ORDER BY s.id DESC LIMIT 1) AS subasta_estado,
                    (SELECT s.fecha_fin FROM subastas s WHERE s.articulo_id = a.id ORDER BY s.id DESC LIMIT 1) AS subasta_fecha_fin
             FROM articulos a
-            ORDER BY a.id DESC
-        ")->fetchAll();
+            " . ($ownerId !== null ? " WHERE a.creado_por = ? " : "") . " ORDER BY a.id DESC";
+        $q = $this->db->prepare($sql);
+        $q->execute($ownerId !== null ? [$ownerId] : []);
+        return $q->fetchAll();
     }
 
-    public function disponiblesParaSubasta(): array {
-        return $this->db->query("
+    public function disponiblesParaSubasta(int $ownerId): array {
+        $q = $this->db->prepare("
             SELECT a.* FROM articulos a
-            WHERE NOT EXISTS (
+            WHERE a.creado_por = ? AND NOT EXISTS (
                 SELECT 1 FROM subastas s
                 WHERE s.articulo_id = a.id
                 AND s.estado IN ('programada', 'activa')
                 AND s.fecha_fin > NOW()
             )
             ORDER BY a.id DESC
-        ")->fetchAll();
+        ");
+        $q->execute([$ownerId]);
+        return $q->fetchAll();
     }
 
     public function create(array $d): bool {
@@ -51,6 +55,9 @@ class Articulo {
         if ($q->fetchColumn() > 0) {
             return [false, 'No se puede eliminar el artículo porque tiene una subasta en curso.'];
         }
+        $compras = $this->db->prepare("SELECT COUNT(*) FROM compras_tokens c JOIN subastas s ON s.id=c.subasta_id WHERE s.articulo_id=?");
+        $compras->execute([$id]);
+        if ($compras->fetchColumn() > 0) return [false, 'El artículo tiene una compra de prueba registrada y no puede eliminarse.'];
         try {
             $this->db->beginTransaction();
             $this->db->prepare("DELETE FROM pujas WHERE subasta_id IN (SELECT id FROM subastas WHERE articulo_id = ?)")->execute([$id]);

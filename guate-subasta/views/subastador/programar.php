@@ -1,7 +1,7 @@
 <h1>Programar subasta</h1>
 <section class="panel narrow">
   <?php if(empty($articulos)): ?>
-    <p>No hay artículos disponibles para programar en este momento. Todos los artículos registrados ya tienen una subasta activa o programada.</p>
+    <p>No hay artículos disponibles para programar en este momento. Tus artículos ya tienen una subasta activa o programada, o aún no has registrado ninguno.</p>
     <a class="button" href="index.php?page=articulos">Registrar un nuevo artículo</a>
   <?php else: ?>
     <form method="post" action="index.php?action=programar" id="formProgramar">

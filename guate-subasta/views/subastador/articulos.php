@@ -60,7 +60,7 @@ sort($todas_categorias);
   </section>
 
   <section class="panel">
-    <h2>Artículos registrados</h2>
+    <h2>Mis artículos registrados</h2>
     <?php if(empty($articulos)): ?>
       <p>No hay artículos registrados aún.</p>
     <?php else: ?>
