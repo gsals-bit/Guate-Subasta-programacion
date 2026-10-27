@@ -38,15 +38,35 @@ $registrarAuditoria = function(string$evento, string $detalle) use ($db): void {
     }
 };
 
+// Modulos adicionales: reportes, recibos QR, avisos y agenda de 30 minutos.
+// Se cargan ANTES de las rutas originales para procesar programacion sin conflicto.
+require_once __DIR__ . '/extras/rutas.php';
+
 $action =$_GET['action'] ?? '';
 if ($action === 'login') (new AuthController($db))->login();
 if ($action === 'registro') (new AuthController($db))->registro();
 if ($action === 'pujar') (new PujaController($db))->crear();
+if ($action === 'cancelar_puja') {
+    require_role(['Cliente']); verify_csrf();
+    [$ok,$msg]=(new Puja($db))->cancelar((int)($_POST['puja_id']??0),(int)$_SESSION['user']['id']);
+    $_SESSION['flash']=$msg; redirect('index.php?page=mis-pujas');
+}
+if ($action === 'pagar_demo') {
+    require_role(['Cliente']); verify_csrf();
+    $sid=(int)($_POST['subasta_id']??0);
+    [$ok,$msg]=(new PagoDemo($db))->pagar($sid,(int)$_SESSION['user']['id'], [
+        'numero' => trim((string)($_POST['demo_numero'] ?? '')),
+        'vencimiento' => trim((string)($_POST['demo_vencimiento'] ?? '')),
+        'cvv' => trim((string)($_POST['demo_cvv'] ?? '')),
+        'acepta' => ($_POST['demo_confirmacion'] ?? '') === '1',
+    ]);
+    $_SESSION['flash']=$msg; redirect('index.php?page=pago&id='.$sid);
+}
+// Antigua compra con tokens deshabilitada: ahora solo tarjeta ficticia.
 if ($action === 'comprar_tokens') {
     require_role(['Cliente']); verify_csrf();
-    $sid=(int)($_POST['subasta_id'] ?? 0);
-    [$ok,$msg]=(new Token($db))->comprar($sid,(int)$_SESSION['user']['id']);
-    $_SESSION['flash']=$msg;
+    $sid = (int)($_POST['subasta_id'] ?? 0);
+    $_SESSION['flash'] = 'Las compras ahora se registran exclusivamente con tarjeta ficticia.';
     redirect('index.php?page=detalle&id='.$sid);
 }
 
@@ -71,7 +91,7 @@ if ($action === 'articulo') {
 
     if (!empty($_FILES['imagenes']['name'][0])) {
         $totalArchivos = count($_FILES['imagenes']['name']);
-        $totalPermitido = min($totalArchivos, 3); // Límite estricto de 3 imágenes en backend
+        $totalPermitido = min($totalArchivos, 10); // Máximo de 10 imágenes por artículo
 
         for ($i = 0; $i < $totalPermitido; $i++) {
             $tmpName = $_FILES['imagenes']['tmp_name'][$i];
@@ -104,7 +124,10 @@ if ($action === 'articulo') {
         'precio_base' => $precioBase,
         'modelo' => trim($_POST['modelo']),
         'imagen' => $jsonImagenes,
-        'creado_por' => $_SESSION['user']['id']
+        'creado_por' => $_SESSION['user']['id'],
+        'ubicacion_nombre' => mb_substr(trim($_POST['ubicacion_nombre'] ?? ''),0,200),
+        'ubicacion_lat' => filter_var($_POST['ubicacion_lat'] ?? null, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE),
+        'ubicacion_lng' => filter_var($_POST['ubicacion_lng'] ?? null, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE)
     ]);
 
     if ($ok) {
@@ -173,6 +196,20 @@ if ($action === 'eliminar_articulo') {
     }
     redirect('index.php?page=articulos');
 }
+// Administrador: archivar articulos, sin borrar pujas ni pagos.
+if ($action === 'archivar_articulos') {
+    require_role(['Administrador']); verify_csrf();
+    $ids = array_values(array_unique(array_filter(array_map('intval', (array)($_POST['ids'] ?? [])), fn($x) => $x > 0)));
+    if (!$ids || count($ids)>500) { $_SESSION['flash']='Selecciona entre 1 y 500 artículos.'; }
+    else {
+        $marks=implode(',', array_fill(0,count($ids),'?'));
+        $q=$db->prepare("UPDATE articulos SET archivado=1 WHERE id IN ($marks) AND archivado=0");
+        $q->execute($ids);
+        $registrarAuditoria('ARCHIVAR_ARTICULOS', 'IDs: '.implode(',',$ids).' | Archivados: '.$q->rowCount());
+        $_SESSION['flash']='Artículos archivados: '.$q->rowCount().'. Historial conservado.';
+    }
+    redirect('index.php?page=articulos');
+}
 // Acción para que el Administrador actualice rol y estado de un usuario
 if ($action === 'actualizar_usuario') {
     require_role(['Administrador']);
@@ -222,17 +259,25 @@ switch ($page) {
         break;
     case 'catalogo':
         require_login();
-        $subastas = (new Subasta($db))->activas();
+        $subastas = array_values(array_filter((new Subasta($db))->activas(), fn($x) => empty($x['archivado'])));
         require __DIR__.'/views/cliente/catalogo.php';
         break;
     case 'detalle':
         require_login();
         $subasta = (new Subasta($db))->find((int)($_GET['id'] ?? 0));
-        if (!$subasta) { echo 'Subasta no encontrada.'; break; }$historial = (new Puja($db))->historialSubasta($subasta['id']);
-        $saldoTokens = (new Token($db))->saldo((int)$_SESSION['user']['id']);
-        $compraQ=$db->prepare('SELECT usuario_id FROM compras_tokens WHERE subasta_id=?');
-        $compraQ->execute([(int)$subasta['id']]); $compraUsuario=$compraQ->fetchColumn();
+        if (!$subasta || ((int)($subasta['archivado'] ?? 0) === 1 && $_SESSION['user']['rol'] !== 'Administrador')) { echo 'Subasta no disponible.'; break; }$historial = (new Puja($db))->historialSubasta($subasta['id']);
         require __DIR__.'/views/cliente/detalle.php';
+        break;
+    case 'pago':
+        require_role(['Cliente']);
+        $sid=(int)($_GET['id']??0);
+        $pago=(new PagoDemo($db))->detalle($sid,(int)$_SESSION['user']['id']);
+        require __DIR__.'/views/cliente/pago.php';
+        break;
+    case 'estadisticas':
+        require_role(['Administrador']);
+        (new Subasta($db))->actualizarEstados();
+        require __DIR__.'/views/admin/estadisticas.php';
         break;
     case 'mis-pujas':
         require_role(['Cliente']);
@@ -241,7 +286,7 @@ switch ($page) {
         break;
     case 'articulos':
         require_role(['Cliente','Subastador','Administrador']);
-        $articulos = (new Articulo($db))->all((int)$_SESSION['user']['id']);
+        $articulos = (new Articulo($db))->all($_SESSION['user']['rol'] === 'Administrador' ? null : (int)$_SESSION['user']['id']);
         require __DIR__.'/views/subastador/articulos.php';
         break;
     case 'programar':
@@ -257,9 +302,10 @@ switch ($page) {
     case 'auditoria':
         require_role(['Auditor','Administrador']);
         $eventos =$db->query("
-            SELECT a.*, u.nombre AS usuario, u.rol AS rol_usuario
+            SELECT a.*, u.nombre AS usuario, r.nombre AS rol_usuario
             FROM auditoria a
             LEFT JOIN usuarios u ON u.id = a.usuario_id
+            LEFT JOIN roles r ON r.id=u.rol_id
             ORDER BY a.id DESC
             LIMIT 300
         ")->fetchAll();

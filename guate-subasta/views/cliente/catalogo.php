@@ -86,6 +86,9 @@ sort($categorias_catalogo);
     
     <div style="display:flex; gap:8px; margin-top:10px; align-items:center;">
       <a class="button" href="index.php?page=detalle&id=<?=(int)$s['id']?>">Ver detalles</a>
+      <?php if (in_array($estadoReal, ['activa','programada'], true) && (int)($s['creado_por']??0)===(int)($_SESSION['user']['id']??0)): ?>
+        <a class="button" style="background:#475569" href="index.php?page=editar-horario&amp;id=<?=(int)$s['id']?>">Modificar horario</a>
+      <?php endif; ?>
 
       <?php if($estadoReal === 'cerrada' && (($_SESSION['user']['rol'] === 'Administrador') || ((int)($s['creado_por'] ?? 0) === (int)$_SESSION['user']['id']))): ?>
         <form method="post" action="index.php?action=eliminar_subasta" onsubmit="return confirm('¿Seguro que deseas eliminar esta subasta cerrada?');" style="margin:0;">

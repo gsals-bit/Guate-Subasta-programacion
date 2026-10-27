@@ -3,6 +3,7 @@ $tipos_evento = array_values(array_filter(array_unique(array_column($eventos, 'e
 sort($tipos_evento);
 ?>
 <h1>Auditoría</h1>
+<div class="audit-actions"><button type="button" onclick="window.print()">🖨 Imprimir bitácora / Guardar como PDF</button></div>
 <p>Bitácora de operaciones relevantes de la plataforma.</p>
 
 <section class="panel" style="margin-bottom:20px; padding:15px;">

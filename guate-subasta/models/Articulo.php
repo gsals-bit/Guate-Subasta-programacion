@@ -13,7 +13,7 @@ class Articulo {
                    (SELECT s.estado FROM subastas s WHERE s.articulo_id = a.id ORDER BY s.id DESC LIMIT 1) AS subasta_estado,
                    (SELECT s.fecha_fin FROM subastas s WHERE s.articulo_id = a.id ORDER BY s.id DESC LIMIT 1) AS subasta_fecha_fin
             FROM articulos a
-            " . ($ownerId !== null ? " WHERE a.creado_por = ? " : "") . " ORDER BY a.id DESC";
+            " . ($ownerId !== null ? " WHERE a.creado_por = ? AND a.archivado=0 " : " WHERE a.archivado=0 ") . " ORDER BY a.id DESC";
         $q = $this->db->prepare($sql);
         $q->execute($ownerId !== null ? [$ownerId] : []);
         return $q->fetchAll();
@@ -22,7 +22,7 @@ class Articulo {
     public function disponiblesParaSubasta(int $ownerId): array {
         $q = $this->db->prepare("
             SELECT a.* FROM articulos a
-            WHERE a.creado_por = ? AND NOT EXISTS (
+            WHERE a.creado_por = ? AND a.archivado=0 AND NOT EXISTS (
                 SELECT 1 FROM subastas s
                 WHERE s.articulo_id = a.id
                 AND s.estado IN ('programada', 'activa')
@@ -35,11 +35,11 @@ class Articulo {
     }
 
     public function create(array $d): bool {
-        $q = $this->db->prepare("INSERT INTO articulos(nombre,categoria,descripcion,estado_fisico,precio_base,modelo,imagen,creado_por)
-        VALUES(?,?,?,?,?,?,?,?)");
+        $q = $this->db->prepare("INSERT INTO articulos(nombre,categoria,descripcion,estado_fisico,precio_base,modelo,imagen,creado_por,ubicacion_nombre,ubicacion_lat,ubicacion_lng)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?)");
         return $q->execute([
             $d['nombre'], $d['categoria'], $d['descripcion'], $d['estado_fisico'],
-            $d['precio_base'], $d['modelo'], $d['imagen'], $d['creado_por']
+            $d['precio_base'], $d['modelo'], $d['imagen'], $d['creado_por'], $d['ubicacion_nombre'] ?: null, $d['ubicacion_lat'], $d['ubicacion_lng']
         ]);
     }
 

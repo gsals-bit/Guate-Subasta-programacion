@@ -3,6 +3,7 @@
 $maxPujasUsuario = [];
 foreach ($pujas as $p) {
     $sid = $p['subasta_id'];
+    if (!empty($p['cancelada']) || (($p['estado_puja'] ?? 'activa') === 'cancelada')) continue;
     if (!isset($maxPujasUsuario[$sid]) || (float)$p['monto'] > $maxPujasUsuario[$sid]) {
         $maxPujasUsuario[$sid] = (float)$p['monto'];
     }
@@ -28,7 +29,9 @@ foreach ($pujas as $p) {
       <th>Acción</th>
     </tr>
     <?php foreach($pujas as $p): 
-      $esMiMejorPuja = abs($maxPujasUsuario[$p['subasta_id']] - (float)$p['monto']) < 0.01;
+      $cancelada = !empty($p['cancelada']) || (($p['estado_puja'] ?? 'activa') === 'cancelada');
+      $esMiMejorPuja = !$cancelada && isset($maxPujasUsuario[$p['subasta_id']])
+          && abs($maxPujasUsuario[$p['subasta_id']] - (float)$p['monto']) < 0.01;
       $esLiderGlobal = abs($maxPujasUsuario[$p['subasta_id']] - (float)$p['monto_actual']) < 0.01;
       $esMaxima = abs((float)$p['monto'] - (float)$p['monto_actual']) < 0.01; 
       
@@ -54,7 +57,8 @@ foreach ($pujas as $p) {
           </span>
         </td>
         <td>
-          <?php if($cerrada): ?>
+          <?php if($cancelada): ?><span style="color:#a33">Cancelada</span>
+          <?php elseif($cerrada): ?>
             <?php if($esMaxima): ?>
               <span style="background:#16a34a; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85em; font-weight:bold;">
                 Adjudicada (Ganador)
@@ -88,6 +92,13 @@ foreach ($pujas as $p) {
           <a class="button" href="index.php?page=detalle&id=<?=(int)$p['subasta_id']?>" style="padding:6px 10px; font-size:0.9em;">
             <?= $mostrarMejorar ? 'Mejorar puja' : 'Ver subasta' ?>
           </a>
+          <?php if (!$cancelada && !$cerrada && $estadoReal==='activa'): ?>
+          <form method="post" action="index.php?action=cancelar_puja" onsubmit="return confirm('¿Cancelar esta puja? Se conservará en la bitácora.');" style="margin-top:6px">
+            <input type="hidden" name="csrf" value="<?=csrf_token()?>">
+            <input type="hidden" name="puja_id" value="<?=(int)$p['id']?>">
+            <button type="submit" style="background:#9f2630">Cancelar puja</button>
+          </form>
+          <?php endif; ?>
         </td>
       </tr>
     <?php endforeach; ?>

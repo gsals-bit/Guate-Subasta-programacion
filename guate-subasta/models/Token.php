@@ -12,9 +12,12 @@ class Token {
             $q->execute([$sid]); $s=$q->fetch();
             if (!$s || strtotime($s['fecha_fin']) > time()) throw new Exception('La subasta aún no ha finalizado.');
             if ((int)$s['creado_por'] === $uid) throw new Exception('No puedes comprar tu propio artículo.');
-            $q=$this->db->prepare('SELECT usuario_id,monto FROM pujas WHERE subasta_id=? ORDER BY monto DESC, fecha ASC LIMIT 1');
+            $q=$this->db->prepare('SELECT usuario_id,monto FROM pujas WHERE subasta_id=? AND cancelada=0 ORDER BY monto DESC, fecha ASC LIMIT 1');
             $q->execute([$sid]); $winner=$q->fetch();
             if (!$winner || (int)$winner['usuario_id'] !== $uid) throw new Exception('Solo el ganador puede comprar el artículo.');
+            $paid=$this->db->prepare("SELECT COUNT(*) FROM ordenes_pago WHERE subasta_id=? AND estado='pagado'");
+            $paid->execute([$sid]);
+            if ($paid->fetchColumn()) throw new Exception('La subasta ya fue pagada con tarjeta ficticia.');
             $q=$this->db->prepare('SELECT id FROM compras_tokens WHERE subasta_id=?');
             $q->execute([$sid]);
             if ($q->fetch()) throw new Exception('Esta subasta ya fue comprada.');

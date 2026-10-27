@@ -78,10 +78,26 @@ class Puja {
             SELECT p.*, u.nombre AS usuario
             FROM pujas p
             JOIN usuarios u ON u.id = p.usuario_id
-            WHERE p.subasta_id = ?
+            WHERE p.subasta_id = ? AND p.cancelada=0
             ORDER BY p.monto DESC, p.fecha DESC
         ");
         $q->execute([$sid]);
         return $q->fetchAll();
+    }
+    public function cancelar(int $pujaId,int $uid): array {
+        try {
+            $this->db->beginTransaction();
+            $q=$this->db->prepare('SELECT s.*,a.precio_base FROM pujas p JOIN subastas s ON s.id=p.subasta_id JOIN articulos a ON a.id=s.articulo_id WHERE p.id=? AND p.usuario_id=? FOR UPDATE');
+            $q->execute([$pujaId,$uid]); $s=$q->fetch();
+            if (!$s) throw new Exception('Puja no encontrada o no te pertenece.');
+            if ($s['estado']!=='activa' || strtotime($s['fecha_fin'])<=time() || strtotime($s['fecha_inicio'])>time()) throw new Exception('Solo puedes cancelar pujas de subastas activas.');
+            $q=$this->db->prepare('UPDATE pujas SET cancelada=1,cancelada_en=NOW() WHERE id=? AND usuario_id=? AND cancelada=0');
+            $q->execute([$pujaId,$uid]); if ($q->rowCount()!==1) throw new Exception('La puja ya estaba cancelada.');
+            $q=$this->db->prepare('SELECT MAX(monto) FROM pujas WHERE subasta_id=? AND cancelada=0'); $q->execute([$s['id']]);
+            $max=$q->fetchColumn(); $nuevo=$max===null?(float)$s['precio_base']:(float)$max;
+            $this->db->prepare('UPDATE subastas SET monto_actual=? WHERE id=?')->execute([$nuevo,$s['id']]);
+            $this->db->prepare('INSERT INTO auditoria(usuario_id,evento,detalle) VALUES(?,?,?)')->execute([$uid,'CANCELAR_PUJA',"Puja #$pujaId cancelada en subasta #{$s['id']}; nuevo monto Q $nuevo"]);
+            $this->db->commit(); return [true,'Puja cancelada. El historial se conserva en la bitácora.'];
+        } catch(Throwable $e) { if($this->db->inTransaction()) $this->db->rollBack(); return [false,$e->getMessage()]; }
     }
 }

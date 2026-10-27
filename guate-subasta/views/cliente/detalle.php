@@ -27,13 +27,20 @@ $imagenes = json_decode($subasta['imagen'] ?? '[]', true);
     <?php if(!empty($imagenes) && is_array($imagenes)): ?>
       <div style="display:flex; gap:10px; margin: 15px 0; overflow-x:auto; padding-bottom:10px;">
         <?php foreach($imagenes as $img): ?>
-          <img src="uploads/<?=e($img)?>" alt="Imagen de <?=e($subasta['articulo'])?>" style="height: 250px; width: auto; max-width: 100%; border-radius: 6px; object-fit: cover; border: 1px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <img src="uploads/<?=e($img)?>" alt="Imagen de <?=e($subasta['articulo'])?>" class="zoomable" tabindex="0" role="button" title="Clic para ampliar" style="height: 250px; width: auto; max-width: 100%; border-radius: 6px; object-fit: cover; border: 1px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <?php endforeach; ?>
       </div>
     <?php else: ?>
        <div style="width:100%; height:150px; background:#f3f4f6; border-radius:6px; margin:15px 0; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-style:italic; border:1px solid #e5e7eb;">Sin imágenes registradas</div>
     <?php endif; ?>
     
+    <?php if(!empty($subasta['ubicacion_nombre'])): ?>
+      <section class="pickup-location"><h3>📍 Punto de entrega</h3><p><?=e($subasta['ubicacion_nombre'])?></p>
+      <?php if(is_numeric($subasta['ubicacion_lat'] ?? null) && is_numeric($subasta['ubicacion_lng'] ?? null)): ?>
+        <a class="button" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query=<?=rawurlencode($subasta['ubicacion_lat'].','.$subasta['ubicacion_lng'])?>">Ver ubicación en Google Maps</a>
+        <iframe loading="lazy" title="Mapa del punto de entrega" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=<?=rawurlencode($subasta['ubicacion_lat'].','.$subasta['ubicacion_lng'])?>&amp;z=14&amp;output=embed" style="width:100%;height:240px;border:0;border-radius:12px;margin-top:12px"></iframe>
+      <?php endif; ?></section>
+    <?php endif; ?>
     <p><strong>Categoría:</strong> <?=e($subasta['categoria'])?></p>
     <p><strong>Descripción:</strong> <?=e($subasta['descripcion'])?></p>
     <p><strong>Modelo:</strong> <?=e($subasta['modelo'] ?: 'N/A')?></p>
@@ -44,7 +51,6 @@ $imagenes = json_decode($subasta['imagen'] ?? '[]', true);
       <p><strong>Tiempo restante:</strong> <span id="contador-subasta" data-fin="<?=e(str_replace(' ', 'T', $subasta['fecha_fin']))?>" style="font-weight:bold; color:#fbbf24;">Calculando...</span></p>
     <?php endif; ?>
 
-    <p><strong>Saldo de tokens de prueba:</strong> <?=number_format($saldoTokens ?? 0,0)?> (1 token = Q1, solo simulación académica).</p>
     <h3>Precio Actual: Q <?=number_format($subasta['monto_actual'], 2)?></h3>
     <p><small>Incremento mínimo requerido: Q <?=number_format($subasta['incremento_minimo'], 2)?></small></p>
 
@@ -84,14 +90,19 @@ $imagenes = json_decode($subasta['imagen'] ?? '[]', true);
     <?php endif; ?>
 
     <?php if($esCerrada && $lider && (int)($lider['usuario_id'] ?? 0) === (int)$_SESSION['user']['id']): ?>
-      <?php if($compraUsuario): ?>
-        <p><strong>Compra de prueba registrada.</strong></p>
+      <?php $detallePago = (new PagoDemo($db))->detalle((int)$subasta['id'], (int)$_SESSION['user']['id']); ?>
+      <?php if ($detallePago && (($detallePago['pago']['estado'] ?? '') === 'pagado')): ?>
+        <div style="background:#dcfce7;color:#166534;padding:14px;border-radius:8px;margin-top:18px">
+          <strong>Compra registrada con tarjeta ficticia.</strong>
+          <p>Referencia: <?=e($detallePago['pago']['referencia_demo'] ?? '')?></p>
+          <a class="button" href="index.php?page=pago&amp;id=<?=(int)$subasta['id']?>">Ver / imprimir comprobante</a>
+        </div>
       <?php else: ?>
-        <form method="post" action="index.php?action=comprar_tokens">
-          <input type="hidden" name="csrf" value="<?=csrf_token()?>">
-          <input type="hidden" name="subasta_id" value="<?=(int)$subasta['id']?>">
-          <button type="submit">Comprar con <?=number_format(ceil((float)$lider['monto']),0)?> tokens (simulación)</button>
-        </form>
+        <div style="padding:16px;border-radius:8px;background:#eaf2ff;margin-top:18px">
+          <strong>Ganaste esta subasta.</strong>
+          <p>Completa tu compra usando una tarjeta de demostración. No se realizan cargos reales.</p>
+          <a class="button" href="index.php?page=pago&amp;id=<?=(int)$subasta['id']?>">Pagar con tarjeta ficticia (demo)</a>
+        </div>
       <?php endif; ?>
     <?php endif; ?>
     <?php if($estadoReal === 'cerrada' && (($_SESSION['user']['rol'] === 'Administrador') || $esPropietario)): ?>

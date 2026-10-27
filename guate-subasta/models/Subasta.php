@@ -13,9 +13,9 @@ class Subasta {
         $this->actualizarEstados();
         // Incluye total de pujas y el usuario con la oferta más alta (líder/ganador)
         return $this->db->query("
-            SELECT s.*, a.nombre AS articulo, a.descripcion, a.precio_base, a.imagen, a.categoria, a.creado_por,
-                   (SELECT COUNT(*) FROM pujas p WHERE p.subasta_id = s.id) AS total_pujas,
-                   (SELECT u.nombre FROM pujas p JOIN usuarios u ON u.id = p.usuario_id WHERE p.subasta_id = s.id ORDER BY p.monto DESC, p.fecha ASC LIMIT 1) AS lider_nombre
+            SELECT s.*, a.nombre AS articulo, a.descripcion, a.precio_base, a.imagen, a.categoria, a.creado_por, a.archivado,
+                   (SELECT COUNT(*) FROM pujas p WHERE p.subasta_id = s.id AND p.cancelada=0) AS total_pujas,
+                   (SELECT u.nombre FROM pujas p JOIN usuarios u ON u.id = p.usuario_id WHERE p.subasta_id = s.id AND p.cancelada=0 ORDER BY p.monto DESC, p.fecha ASC LIMIT 1) AS lider_nombre
             FROM subastas s
             JOIN articulos a ON a.id = s.articulo_id
             ORDER BY FIELD(s.estado, 'activa', 'programada', 'cerrada'), s.fecha_fin ASC
@@ -25,7 +25,7 @@ class Subasta {
   public function find(int $id): ?array {
         $this->actualizarEstados();
         $q = $this->db->prepare("
-            SELECT s.*, a.nombre AS articulo, a.descripcion, a.precio_base, a.imagen, a.categoria, a.modelo, a.creado_por
+            SELECT s.*, a.nombre AS articulo, a.descripcion, a.precio_base, a.imagen, a.categoria, a.modelo, a.creado_por, a.archivado, a.ubicacion_nombre, a.ubicacion_lat, a.ubicacion_lng
             FROM subastas s
             JOIN articulos a ON a.id = s.articulo_id
             WHERE s.id = ?
