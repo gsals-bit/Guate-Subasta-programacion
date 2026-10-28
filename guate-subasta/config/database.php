@@ -1,7 +1,7 @@
 <?php
 class Database {
     public static function connect(): PDO {
-        $host = 'localhost';
+        $host = '127.0.0.1';
         $db   = 'guate_subasta_pruebas';
         $user = 'root';
         $pass = '';
