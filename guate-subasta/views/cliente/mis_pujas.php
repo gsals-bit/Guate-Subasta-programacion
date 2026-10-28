@@ -1,5 +1,5 @@
 <?php
-// Pre-calcular la puja máxima del usuario por cada subasta para saber cuál es su oferta principal
+// Puja máxima vigente del usuario por subasta (ignora las canceladas)
 $maxPujasUsuario = [];
 foreach ($pujas as $p) {
     $sid = $p['subasta_id'];
@@ -8,105 +8,110 @@ foreach ($pujas as $p) {
         $maxPujasUsuario[$sid] = (float)$p['monto'];
     }
 }
+
+// Primera pasada: calcular la situación de cada puja y el resumen superior
+$filas = [];
+$resumen = ['ganando' => [], 'superada' => [], 'adjudicada' => []];
+foreach ($pujas as $p) {
+    $sid = $p['subasta_id'];
+    $cancelada = !empty($p['cancelada']) || (($p['estado_puja'] ?? 'activa') === 'cancelada');
+    $mejor = $maxPujasUsuario[$sid] ?? 0.0;
+    $esMiMejorPuja = !$cancelada && isset($maxPujasUsuario[$sid]) && abs($mejor - (float)$p['monto']) < 0.01;
+    $esLiderGlobal = abs($mejor - (float)$p['monto_actual']) < 0.01;
+    $esMaxima = abs((float)$p['monto'] - (float)$p['monto_actual']) < 0.01;
+
+    $cerrada = in_array(strtolower($p['estado']), ['cerrada', 'finalizada']) || strtotime($p['fecha_fin']) <= time();
+    $estadoReal = $cerrada ? 'cerrada' : (empty($p['estado']) ? 'activa' : strtolower($p['estado']));
+
+    if ($cancelada)                                $sit = 'cancelada';
+    elseif ($cerrada)                              $sit = $esMaxima ? 'adjudicada' : 'no_adjudicada';
+    elseif ($esLiderGlobal && $esMiMejorPuja)      $sit = 'ganando';
+    elseif (!$esLiderGlobal && $esMiMejorPuja)     $sit = 'superada';
+    else                                           $sit = 'anterior';
+
+    if (isset($resumen[$sit])) $resumen[$sit][$sid] = true;
+
+    $p['_cancelada'] = $cancelada;
+    $p['_cerrada'] = $cerrada;
+    $p['_estado'] = $estadoReal;
+    $p['_sit'] = $sit;
+    $filas[] = $p;
+}
+
+$situaciones = [
+    'cancelada'     => ['badge cancelada', 'Cancelada'],
+    'adjudicada'    => ['badge', 'Adjudicada, ganaste'],
+    'no_adjudicada' => ['badge cerrada', 'No adjudicada'],
+    'ganando'       => ['badge', 'Vas ganando'],
+    'superada'      => ['badge warn', 'Puja superada'],
+    'anterior'      => ['badge muted', 'Puja anterior'],
+];
 ?>
 <h1>Mis pujas</h1>
-<p>Revisa el historial de tus ofertas y verifica en tiempo real si vas liderando las subastas.</p>
+<p>Revisa tus ofertas y mira en qué subastas vas ganando.</p>
 
 <?php if(empty($pujas)): ?>
   <section class="panel">
-    <p>Aún no has realizado ninguna puja.</p>
-    <a class="button" href="index.php?page=catalogo">Explorar subastas disponibles</a>
+    <div class="empty">
+      <p>Todavía no has hecho ninguna puja.</p>
+      <a class="button sm" href="index.php?page=catalogo">Explorar subastas</a>
+    </div>
   </section>
 <?php else: ?>
-  <table>
-    <tr>
-      <th>Artículo</th>
-      <th>Tu Puja</th>
-      <th>Precio Actual</th>
-      <th>Estado Subasta</th>
-      <th>Situación</th>
-      <th>Fecha</th>
-      <th>Acción</th>
-    </tr>
-    <?php foreach($pujas as $p): 
-      $cancelada = !empty($p['cancelada']) || (($p['estado_puja'] ?? 'activa') === 'cancelada');
-      $esMiMejorPuja = !$cancelada && isset($maxPujasUsuario[$p['subasta_id']])
-          && abs($maxPujasUsuario[$p['subasta_id']] - (float)$p['monto']) < 0.01;
-      $esLiderGlobal = abs($maxPujasUsuario[$p['subasta_id']] - (float)$p['monto_actual']) < 0.01;
-      $esMaxima = abs((float)$p['monto'] - (float)$p['monto_actual']) < 0.01; 
-      
-      $cerrada = in_array(strtolower($p['estado']), ['cerrada', 'finalizada']) || strtotime($p['fecha_fin']) <= time();
-      $estadoReal = $cerrada ? 'cerrada' : (empty($p['estado']) ? 'activa' : strtolower($p['estado']));
+  <div class="chips">
+    <span class="chip win"><b><?=count($resumen['ganando'])?></b> vas ganando</span>
+    <span class="chip lost"><b><?=count($resumen['superada'])?></b> superadas</span>
+    <span class="chip"><b><?=count($resumen['adjudicada'])?></b> adjudicadas</span>
+  </div>
 
-      $bgEstado = '#16a34a'; 
-      if ($estadoReal === 'cerrada') $bgEstado = '#dc2626'; 
-      if ($estadoReal === 'programada') $bgEstado = '#d97706'; 
-      
-      $fechaFormateada = date('d/m/Y h:i:s A', strtotime($p['fecha']));
-    ?>
+  <section class="panel table-panel">
+    <table>
       <tr>
-        <td>
-          <strong><?=e($p['articulo'])?></strong><br>
-          <small style="opacity:0.75;"><?=e($p['categoria'] ?? '')?></small>
-        </td>
-        <td>Q <?=number_format($p['monto'], 2)?></td>
-        <td><strong>Q <?=number_format($p['monto_actual'], 2)?></strong></td>
-        <td>
-          <span class="badge" style="background:<?=$bgEstado?>; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.8em; font-weight:bold; display:inline-block; text-transform:capitalize;">
-            <?=e($estadoReal)?>
-          </span>
-        </td>
-        <td>
-          <?php if($cancelada): ?><span style="color:#a33">Cancelada</span>
-          <?php elseif($cerrada): ?>
-            <?php if($esMaxima): ?>
-              <span style="background:#16a34a; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85em; font-weight:bold;">
-                Adjudicada (Ganador)
-              </span>
-            <?php else: ?>
-              <span style="background:#4b5563; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85em;">
-                No adjudicada
-              </span>
-            <?php endif; ?>
-          <?php else: ?>
-            <?php if($esLiderGlobal && $esMiMejorPuja): ?>
-              <span style="background:#2563eb; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85em; font-weight:bold;">
-                Vas ganando
-              </span>
-            <?php elseif(!$esLiderGlobal && $esMiMejorPuja): ?>
-              <span style="background:#d97706; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85em; font-weight:bold;">
-                Puja superada
-              </span>
-            <?php else: ?>
-              <span style="background:#6b7280; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85em;">
-                Puja anterior
-              </span>
-            <?php endif; ?>
-          <?php endif; ?>
-        </td>
-        <td><?=e($fechaFormateada)?></td>
-        <td>
-          <?php 
-            $mostrarMejorar = (!$cerrada && !$esLiderGlobal && $esMiMejorPuja); 
-          ?>
-          <a class="button" href="index.php?page=detalle&id=<?=(int)$p['subasta_id']?>" style="padding:6px 10px; font-size:0.9em;">
-            <?= $mostrarMejorar ? 'Mejorar puja' : 'Ver subasta' ?>
-          </a>
-          <?php if (!$cancelada && !$cerrada && $estadoReal==='activa'): ?>
-          <form method="post" action="index.php?action=cancelar_puja" onsubmit="return confirm('¿Cancelar esta puja? Se conservará en la bitácora.');" style="margin-top:6px">
-            <input type="hidden" name="csrf" value="<?=csrf_token()?>">
-            <input type="hidden" name="puja_id" value="<?=(int)$p['id']?>">
-            <button type="submit" style="background:#9f2630">Cancelar puja</button>
-          </form>
-          <?php endif; ?>
-        </td>
+        <th>Artículo</th>
+        <th>Tu puja</th>
+        <th>Precio actual</th>
+        <th>Subasta</th>
+        <th>Situación</th>
+        <th>Fecha</th>
+        <th></th>
       </tr>
-    <?php endforeach; ?>
-  </table>
+      <?php foreach($filas as $p):
+        [$claseSit, $textoSit] = $situaciones[$p['_sit']];
+      ?>
+        <tr>
+          <td>
+            <strong><?=e($p['articulo'])?></strong><br>
+            <small class="muted"><?=e($p['categoria'] ?? '')?></small>
+          </td>
+          <td>Q <?=number_format((float)$p['monto'], 2)?></td>
+          <td><strong>Q <?=number_format((float)$p['monto_actual'], 2)?></strong></td>
+          <td><span class="badge <?=e($p['_estado'])?>"><?=e($p['_estado'])?></span></td>
+          <td><span class="<?=$claseSit?>"><?=$textoSit?></span></td>
+          <td><?=e(date('d/m/Y h:i A', strtotime($p['fecha'])))?></td>
+          <td>
+            <div class="row-actions">
+              <?php if($p['_sit'] === 'superada'): ?>
+                <a class="button sm gold" href="index.php?page=detalle&id=<?=(int)$p['subasta_id']?>">Mejorar puja</a>
+              <?php else: ?>
+                <a class="button sm ghost" href="index.php?page=detalle&id=<?=(int)$p['subasta_id']?>">Ver subasta</a>
+              <?php endif; ?>
+              <?php if (!$p['_cancelada'] && !$p['_cerrada'] && $p['_estado'] === 'activa'): ?>
+                <form method="post" action="index.php?action=cancelar_puja" onsubmit="return confirm('¿Cancelar esta puja? Se conservará en la bitácora.');">
+                  <input type="hidden" name="csrf" value="<?=csrf_token()?>">
+                  <input type="hidden" name="puja_id" value="<?=(int)$p['id']?>">
+                  <button type="submit" class="sm danger">Cancelar</button>
+                </form>
+              <?php endif; ?>
+            </div>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+    </table>
+  </section>
 <?php endif; ?>
 
 <script>
-// Forzar recarga si el usuario navega hacia esta pagina usando el boton "Atras" del navegador
+// Forzar recarga si el usuario vuelve a esta página con el botón "Atrás" del navegador
 window.addEventListener('pageshow', function(event) {
     if (event.persisted) {
         window.location.reload();

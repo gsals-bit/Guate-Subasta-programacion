@@ -3,6 +3,9 @@ $rolActual = $_SESSION['user']['rol'] ?? 'Cliente';
 $nombreUsuario = $_SESSION['user']['nombre'] ?? 'Usuario';
 $usuarioId = (int)($_SESSION['user']['id'] ?? 0);
 
+/* $ic e $icons vienen de layouts/header.php; si no existieran, el panel funciona igual sin íconos */
+if (!isset($ic, $icons)) { $ic = fn($d) => ''; $icons = []; }
+
 $resumenEstados = ['activa' => 0, 'programada' => 0, 'cerrada' => 0];
 $proximasSubastas = [];
 $misPujasRecientes = [];
@@ -46,9 +49,9 @@ if (isset($db)) {
         $misPujasRecientes = $qMisPujas->fetchAll();
     }
 
-    // 4. Subastas activas y próximas a finalizar
+    // 4. Subastas activas y próximas a finalizar (se agrega la imagen del artículo)
     $proximasSubastas = $db->query("
-        SELECT s.id, s.monto_actual, s.fecha_fin, s.estado, a.nombre AS articulo, a.categoria,
+        SELECT s.id, s.monto_actual, s.fecha_fin, s.estado, a.nombre AS articulo, a.categoria, a.imagen,
                (SELECT COUNT(*) FROM pujas p WHERE p.subasta_id = s.id) AS total_pujas
         FROM subastas s
         JOIN articulos a ON a.id = s.articulo_id
@@ -59,121 +62,147 @@ if (isset($db)) {
 }
 
 $totalSubastasReal = array_sum($resumenEstados);
+
+/* Primera imagen del artículo (el campo guarda un JSON con nombres de archivo en /uploads) */
+$primeraImagen = function ($raw): ?string {
+    if (empty($raw)) return null;
+    $lista = json_decode((string)$raw, true);
+    $nombre = is_array($lista) ? ($lista[0] ?? null) : (string)$raw;
+    return $nombre ? 'uploads/' . rawurlencode(basename($nombre)) : null;
+};
+
+/* Accesos rápidos según el rol: [página, título, descripción, ícono] */
+$accesos = [['catalogo', 'Ver subastas', 'Explora el catálogo y puja', 'gavel']];
+if ($rolActual === 'Cliente') $accesos[] = ['mis-pujas', 'Mis pujas', 'Revisa tu historial y tus pagos', 'pujas'];
+if (in_array($rolActual, ['Cliente', 'Subastador', 'Administrador'], true)) {
+    $accesos[] = ['articulos', 'Gestionar artículos', 'Registra y edita tus artículos', 'box'];
+    $accesos[] = ['programar', 'Programar subasta', 'Elige fecha de inicio y cierre', 'calendar'];
+}
+if ($rolActual === 'Administrador') $accesos[] = ['usuarios', 'Usuarios y roles', 'Administra cuentas y permisos', 'users'];
+if (in_array($rolActual, ['Auditor', 'Administrador'], true)) $accesos[] = ['auditoria', 'Bitácora de auditoría', 'Consulta los eventos del sistema', 'shield'];
 ?>
-<h1>Panel principal</h1>
+<h1>Hola, <?=e($nombreUsuario)?></h1>
 <?php if($rolActual === 'Cliente'): ?>
-  <p>Bienvenido, <strong><?=e($nombreUsuario)?></strong> (Rol: <?=e($rolActual)?>). Resumen de las subastas del catálogo y el historial de pujas que has realizado.</p>
+  <p>Aquí ves cómo van las subastas del catálogo y tus pujas más recientes.</p>
 <?php else: ?>
-  <p>Bienvenido, <strong><?=e($nombreUsuario)?></strong> (Rol: <?=e($rolActual)?>). Monitoreo general de usuarios, artículos, subastas, pujas y auditoría.</p>
+  <p>Vista general de usuarios, artículos, subastas, pujas y auditoría. Tu rol: <?=e($rolActual)?>.</p>
 <?php endif; ?>
 
 <div class="stats">
   <div>
     <small>Usuarios registrados</small>
-    <b><?=(int)$stats['usuarios']?></b>
+    <b><?=(int)($stats['usuarios'] ?? 0)?></b>
   </div>
   <div>
     <small>Artículos en catálogo</small>
-    <b><?=(int)$stats['articulos']?></b>
+    <b><?=(int)($stats['articulos'] ?? 0)?></b>
   </div>
   <div>
     <small>Total de subastas</small>
     <b><?=$totalSubastasReal?></b>
-    <small style="display:block; margin-top:4px; opacity:0.8;">
-      Activas: <?=$resumenEstados['activa']?> | Programadas: <?=$resumenEstados['programada']?> | Cerradas: <?=$resumenEstados['cerrada']?>
-    </small>
+    <small><?=$resumenEstados['activa']?> activas, <?=$resumenEstados['programada']?> programadas, <?=$resumenEstados['cerrada']?> cerradas</small>
   </div>
   <div>
     <small><?= $rolActual === 'Cliente' ? 'Mis pujas realizadas' : 'Pujas realizadas' ?></small>
     <b><?=$totalPujasMostrar?></b>
-    <?php if($rolActual === 'Cliente'): ?>
-      <small style="display:block; margin-top:4px; opacity:0.8;">En tu historial personal</small>
-    <?php endif; ?>
+    <?php if($rolActual === 'Cliente'): ?><small>En tu historial personal</small><?php endif; ?>
   </div>
 </div>
 
-<div class="grid2" style="margin-top:20px;">
+<div class="dash-grid">
   <section class="panel">
-    <h2>Accesos rápidos</h2>
-    <p>Navega directamente a las operaciones habilitadas para tu cuenta.</p>
-    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:15px;">
-      <a class="button" href="index.php?page=catalogo">Ver subastas</a>
-      <?php if($rolActual === 'Cliente'): ?>
-        <a class="button" href="index.php?page=mis-pujas">Mis pujas</a>
-      <?php endif; ?>
-      <?php if(in_array($rolActual, ['Cliente', 'Subastador', 'Administrador'], true)): ?>
-        <a class="button" href="index.php?page=articulos">Gestionar artículos</a>
-        <a class="button" href="index.php?page=programar">Programar subasta</a>
-      <?php endif; ?>
-      <?php if($rolActual === 'Administrador'): ?>
-        <a class="button" href="index.php?page=usuarios">Usuarios y roles</a>
-      <?php endif; ?>
-      <?php if(in_array($rolActual, ['Auditor', 'Administrador'], true)): ?>
-        <a class="button" href="index.php?page=auditoria">Bitácora de auditoría</a>
-      <?php endif; ?>
+    <div class="panel-head">
+      <h2>Subastas que cierran pronto</h2>
+      <a class="link-more" href="index.php?page=catalogo">Ver todas</a>
     </div>
+    <?php if(empty($proximasSubastas)): ?>
+      <div class="empty">
+        <p>No hay subastas activas ni programadas por ahora.</p>
+        <?php if(in_array($rolActual, ['Cliente','Subastador','Administrador'], true)): ?>
+          <a class="button sm" href="index.php?page=programar">Programar una subasta</a>
+        <?php endif; ?>
+      </div>
+    <?php else: ?>
+      <?php foreach($proximasSubastas as $ps):
+        $img = $primeraImagen($ps['imagen'] ?? null);
+        $estadoClase = strtolower(trim($ps['estado']));
+      ?>
+        <div class="lot">
+          <div class="lot-tile">
+            <?php if($img): ?><img src="<?=e($img)?>" alt="" loading="lazy"><?php else: ?><?=e(mb_strtoupper(mb_substr($ps['articulo'], 0, 1)))?><?php endif; ?>
+          </div>
+          <div class="lot-main">
+            <a class="lot-name" href="index.php?page=detalle&id=<?=(int)$ps['id']?>"><?=e($ps['articulo'])?></a>
+            <span class="lot-meta"><?=e($ps['categoria'])?> · <?=(int)$ps['total_pujas']?> <?=((int)$ps['total_pujas'] === 1) ? 'puja' : 'pujas'?></span>
+            <span class="badge <?=e($estadoClase)?>"><?=e($ps['estado'])?></span>
+          </div>
+          <div class="lot-price">
+            <small>Oferta actual</small>
+            <b>Q <?=number_format((float)$ps['monto_actual'], 2)?></b>
+          </div>
+          <div class="lot-time">
+            <span class="countdown" data-countdown="<?=e($ps['fecha_fin'])?>"></span>
+            <small>Cierra <?=e(date('d/m/Y h:i A', strtotime($ps['fecha_fin'])))?></small>
+          </div>
+          <a class="button sm" href="index.php?page=detalle&id=<?=(int)$ps['id']?>">Abrir</a>
+        </div>
+      <?php endforeach; ?>
+    <?php endif; ?>
   </section>
 
   <section class="panel">
-    <h2>Subastas activas y próximas a finalizar</h2>
-    <?php if(empty($proximasSubastas)): ?>
-      <p>No hay subastas activas o programadas en este momento.</p>
-    <?php else: ?>
-      <table>
-        <tr>
-          <th>Artículo</th>
-          <th>Estado</th>
-          <th>Monto actual</th>
-          <th>Pujas</th>
-          <th>Finaliza</th>
-          <th>Acción</th>
-        </tr>
-        <?php foreach($proximasSubastas as $ps): ?>
-          <tr>
-            <td>
-              <strong><?=e($ps['articulo'])?></strong><br>
-              <small style="opacity:0.75;"><?=e($ps['categoria'])?></small>
-            </td>
-            <td><span class="badge"><?=e($ps['estado'])?></span></td>
-            <td>Q <?=number_format($ps['monto_actual'], 2)?></td>
-            <td><?=(int)$ps['total_pujas']?></td>
-            <td><?=e(date('d/m/Y h:i:s A', strtotime($ps['fecha_fin'])))?></td>
-            <td>
-              <a class="button" href="index.php?page=detalle&id=<?=(int)$ps['id']?>" style="padding:5px 10px; font-size:0.85em;">Abrir</a>
-            </td>
-          </tr>
-        <?php endforeach; ?>
-      </table>
-    <?php endif; ?>
+    <h2>Accesos rápidos</h2>
+    <div class="quick">
+      <?php foreach($accesos as $i => $ac): ?>
+        <a class="quick-link<?= $i === 0 ? ' primary' : '' ?>" href="index.php?page=<?=e($ac[0])?>">
+          <span class="quick-ico"><?=$ic($icons[$ac[3]] ?? '')?></span>
+          <span class="quick-text"><b><?=e($ac[1])?></b><small><?=e($ac[2])?></small></span>
+        </a>
+      <?php endforeach; ?>
+    </div>
   </section>
 </div>
 
 <?php if($rolActual === 'Cliente'): ?>
 <section class="panel" style="margin-top:20px;">
-  <h2>Mi historial reciente de pujas</h2>
+  <div class="panel-head">
+    <h2>Mis pujas recientes</h2>
+    <a class="link-more" href="index.php?page=mis-pujas">Ver historial completo</a>
+  </div>
   <?php if(empty($misPujasRecientes)): ?>
-    <p>Aún no has realizado ninguna puja en el sistema.</p>
+    <div class="empty">
+      <p>Todavía no has hecho ninguna puja.</p>
+      <a class="button sm" href="index.php?page=catalogo">Explorar subastas</a>
+    </div>
   <?php else: ?>
     <table>
       <tr>
         <th>Artículo</th>
-        <th>Tu Puja</th>
-        <th>Precio Actual</th>
+        <th>Tu puja</th>
+        <th>Oferta actual</th>
+        <th>Situación</th>
         <th>Fecha</th>
-        <th>Acción</th>
+        <th></th>
       </tr>
-      <?php foreach($misPujasRecientes as $mp): ?>
+      <?php foreach($misPujasRecientes as $mp):
+        $estP = strtolower(trim($mp['estado'] ?? ''));
+        $cerrada = in_array($estP, ['cerrada', 'finalizada'], true) || (!empty($mp['fecha_fin']) && strtotime($mp['fecha_fin']) <= time());
+        $liderando = (float)$mp['monto'] >= (float)$mp['monto_actual'];
+      ?>
         <tr>
           <td>
             <strong><?=e($mp['articulo'])?></strong><br>
-            <small style="opacity:0.75;"><?=e($mp['categoria'])?></small>
+            <small class="muted"><?=e($mp['categoria'])?></small>
           </td>
-          <td>Q <?=number_format($mp['monto'], 2)?></td>
-          <td><strong>Q <?=number_format($mp['monto_actual'], 2)?></strong></td>
-          <td><?=e(date('d/m/Y h:i:s A', strtotime($mp['fecha'])))?></td>
+          <td>Q <?=number_format((float)$mp['monto'], 2)?></td>
+          <td><strong>Q <?=number_format((float)$mp['monto_actual'], 2)?></strong></td>
           <td>
-            <a class="button" href="index.php?page=detalle&id=<?=(int)$mp['subasta_id']?>" style="padding:5px 10px; font-size:0.85em;">Ver subasta</a>
+            <?php if($cerrada): ?><span class="badge cerrada">Cerrada</span>
+            <?php elseif($liderando): ?><span class="badge">Vas ganando</span>
+            <?php else: ?><span class="badge warn">Superada</span><?php endif; ?>
           </td>
+          <td><?=e(date('d/m/Y h:i A', strtotime($mp['fecha'])))?></td>
+          <td><a class="button sm ghost" href="index.php?page=detalle&id=<?=(int)$mp['subasta_id']?>">Ver subasta</a></td>
         </tr>
       <?php endforeach; ?>
     </table>

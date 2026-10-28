@@ -5,139 +5,180 @@ $esPropietario = isset($_SESSION['user']['id'], $subasta['creado_por']) && ((int
 $esCerrada = in_array(strtolower($subasta['estado'] ?? ''), ['cerrada', 'finalizada']) || strtotime($subasta['fecha_fin']) <= time();
 $estadoReal = $esCerrada ? 'cerrada' : (empty($subasta['estado']) ? 'activa' : strtolower($subasta['estado']));
 
-$colorBadge = '#16a34a'; 
-if ($estadoReal === 'cerrada') $colorBadge = '#dc2626'; 
-if ($estadoReal === 'programada') $colorBadge = '#d97706'; 
-
-$fechaFinFormateada = date('d/m/Y h:i:s A', strtotime($subasta['fecha_fin']));
-$fechaInicioFormateada = date('d/m/Y h:i:s A', strtotime($subasta['fecha_inicio']));
+$fechaFinFormateada = date('d/m/Y h:i A', strtotime($subasta['fecha_fin']));
+$fechaInicioFormateada = date('d/m/Y h:i A', strtotime($subasta['fecha_inicio']));
 
 // Extraer el arreglo de imágenes
 $imagenes = json_decode($subasta['imagen'] ?? '[]', true);
+if (!is_array($imagenes)) $imagenes = [];
+
+$minimoPuja = (float)$subasta['monto_actual'] + (float)$subasta['incremento_minimo'];
+$esGanador = $esCerrada && $lider && (int)($lider['usuario_id'] ?? 0) === (int)$_SESSION['user']['id'];
+$tieneMapa = is_numeric($subasta['ubicacion_lat'] ?? null) && is_numeric($subasta['ubicacion_lng'] ?? null);
 ?>
-<div class="grid2">
-  <section class="panel">
-    <h1><?=e($subasta['articulo'])?></h1>
-    
-    <span class="badge" style="background: <?=$colorBadge?>; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; display: inline-block; text-transform: capitalize; margin-bottom: 10px;">
-      <?=e($estadoReal)?>
-    </span>
+<a class="back-link" href="index.php?page=catalogo">
+  <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+  Volver a subastas
+</a>
+<div class="title-row">
+  <h1><?=e($subasta['articulo'])?></h1>
+  <span class="badge <?=e($estadoReal)?>"><?=e($estadoReal)?></span>
+</div>
+<p><?=e($subasta['categoria'])?></p>
 
-    <!-- Galería horizontal de imágenes -->
-    <?php if(!empty($imagenes) && is_array($imagenes)): ?>
-      <div style="display:flex; gap:10px; margin: 15px 0; overflow-x:auto; padding-bottom:10px;">
-        <?php foreach($imagenes as $img): ?>
-          <img src="uploads/<?=e($img)?>" alt="Imagen de <?=e($subasta['articulo'])?>" class="zoomable" tabindex="0" role="button" title="Clic para ampliar" style="height: 250px; width: auto; max-width: 100%; border-radius: 6px; object-fit: cover; border: 1px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <?php endforeach; ?>
-      </div>
-    <?php else: ?>
-       <div style="width:100%; height:150px; background:#f3f4f6; border-radius:6px; margin:15px 0; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-style:italic; border:1px solid #e5e7eb;">Sin imágenes registradas</div>
-    <?php endif; ?>
-    
-    <?php if(!empty($subasta['ubicacion_nombre'])): ?>
-      <section class="pickup-location"><h3>📍 Punto de entrega</h3><p><?=e($subasta['ubicacion_nombre'])?></p>
-      <?php if(is_numeric($subasta['ubicacion_lat'] ?? null) && is_numeric($subasta['ubicacion_lng'] ?? null)): ?>
-        <a class="button" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query=<?=rawurlencode($subasta['ubicacion_lat'].','.$subasta['ubicacion_lng'])?>">Ver ubicación en Google Maps</a>
-        <iframe loading="lazy" title="Mapa del punto de entrega" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=<?=rawurlencode($subasta['ubicacion_lat'].','.$subasta['ubicacion_lng'])?>&amp;z=14&amp;output=embed" style="width:100%;height:240px;border:0;border-radius:12px;margin-top:12px"></iframe>
-      <?php endif; ?></section>
-    <?php endif; ?>
-    <p><strong>Categoría:</strong> <?=e($subasta['categoria'])?></p>
-    <p><strong>Descripción:</strong> <?=e($subasta['descripcion'])?></p>
-    <p><strong>Modelo:</strong> <?=e($subasta['modelo'] ?: 'N/A')?></p>
-    <hr style="margin:15px 0;">
-    <p><strong>Finaliza:</strong> <?=e($fechaFinFormateada)?></p>
+<div class="detail-page">
 
-    <?php if($estadoReal !== 'cerrada'): ?>
-      <p><strong>Tiempo restante:</strong> <span id="contador-subasta" data-fin="<?=e(str_replace(' ', 'T', $subasta['fecha_fin']))?>" style="font-weight:bold; color:#fbbf24;">Calculando...</span></p>
-    <?php endif; ?>
-
-    <h3>Precio Actual: Q <?=number_format($subasta['monto_actual'], 2)?></h3>
-    <p><small>Incremento mínimo requerido: Q <?=number_format($subasta['incremento_minimo'], 2)?></small></p>
-
-    <?php if($estadoReal === 'activa' && $lider): ?>
-      <div style="background:#1e3a8a; color:#dbeafe; padding:10px; border-radius:4px; margin-top:12px;">
-        <strong>Oferta líder actual:</strong> <?=e($lider['usuario'])?> con Q <?=number_format($lider['monto'], 2)?>
-      </div>
-    <?php endif; ?>
-    
-    <?php if($estadoReal === 'activa'): ?>
-      <?php if($esPropietario): ?>
-        <div style="background:#374151; color:#f3f4f6; padding:10px; border-radius:4px; margin-top:20px;">
-          Registraste este artículo. No puedes realizar ofertas en tu propia subasta.
-        </div>
+  <!-- ===== Columna izquierda: imágenes y datos del artículo ===== -->
+  <div class="stack">
+    <section class="panel">
+      <?php if(!empty($imagenes)): ?>
+        <img id="galeria-principal" class="gallery-main zoomable" src="uploads/<?=e($imagenes[0])?>" alt="Imagen de <?=e($subasta['articulo'])?>" tabindex="0" role="button" title="Clic para ampliar">
+        <?php if(count($imagenes) > 1): ?>
+          <div class="gallery-thumbs">
+            <?php foreach($imagenes as $i => $img): ?>
+              <img class="<?= $i === 0 ? 'on' : '' ?>" src="uploads/<?=e($img)?>" alt="Miniatura <?=$i + 1?>" loading="lazy">
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
       <?php else: ?>
-        <form method="post" action="index.php?action=pujar" style="margin-top:20px;">
+        <div class="no-image">Este artículo no tiene imágenes</div>
+      <?php endif; ?>
+    </section>
+
+    <section class="panel">
+      <h2>Detalles del artículo</h2>
+      <dl class="facts">
+        <dt>Categoría</dt><dd><?=e($subasta['categoria'])?></dd>
+        <dt>Modelo</dt><dd><?=e($subasta['modelo'] ?: 'N/A')?></dd>
+        <dt>Descripción</dt><dd><?=e($subasta['descripcion'])?></dd>
+      </dl>
+    </section>
+
+    <?php if(!empty($subasta['ubicacion_nombre'])): ?>
+    <section class="panel">
+      <h2>Punto de entrega</h2>
+      <p style="margin:0 0 4px"><?=e($subasta['ubicacion_nombre'])?></p>
+      <?php if($tieneMapa): ?>
+        <a class="button sm ghost" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query=<?=rawurlencode($subasta['ubicacion_lat'].','.$subasta['ubicacion_lng'])?>">Abrir en Google Maps</a>
+        <iframe loading="lazy" title="Mapa del punto de entrega" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=<?=rawurlencode($subasta['ubicacion_lat'].','.$subasta['ubicacion_lng'])?>&amp;z=14&amp;output=embed" class="map-frame"></iframe>
+      <?php endif; ?>
+    </section>
+    <?php endif; ?>
+  </div>
+
+  <!-- ===== Columna derecha: puja e historial ===== -->
+  <div class="stack">
+    <section class="panel">
+      <div class="price-label"><?= $estadoReal === 'cerrada' ? 'Precio final' : 'Oferta actual' ?></div>
+      <div class="price-big">Q <?=number_format((float)$subasta['monto_actual'], 2)?></div>
+
+      <div class="bid-meta"><span>Incremento mínimo</span><b>Q <?=number_format((float)$subasta['incremento_minimo'], 2)?></b></div>
+      <div class="bid-meta"><span>Cierra</span><b><?=e($fechaFinFormateada)?></b></div>
+      <?php if($estadoReal !== 'cerrada'): ?>
+        <div class="bid-meta"><span>Tiempo restante</span><span class="countdown" id="contador-subasta" data-fin="<?=e(str_replace(' ', 'T', $subasta['fecha_fin']))?>">Calculando...</span></div>
+      <?php endif; ?>
+
+      <?php if($estadoReal === 'activa' && $lider): ?>
+        <div class="notice info"><strong>Va ganando:</strong> <?=e($lider['usuario'])?> con Q <?=number_format((float)$lider['monto'], 2)?></div>
+      <?php endif; ?>
+
+      <?php if($estadoReal === 'activa'): ?>
+        <?php if($esPropietario): ?>
+          <div class="notice neutral">Registraste este artículo, así que no puedes pujar en tu propia subasta.</div>
+        <?php else: ?>
+          <form class="bid-form" method="post" action="index.php?action=pujar">
+            <input type="hidden" name="csrf" value="<?=csrf_token()?>">
+            <input type="hidden" name="subasta_id" value="<?=(int)$subasta['id']?>">
+            <label for="monto">Tu puja</label>
+            <div class="money-input">
+              <span>Q</span>
+              <input id="monto" type="number" step=".01" min="<?=$minimoPuja?>" value="<?=number_format($minimoPuja, 2, '.', '')?>" name="monto" required>
+            </div>
+            <p class="hint">La puja mínima es Q <?=number_format($minimoPuja, 2)?>.</p>
+            <button type="submit" class="gold block">Realizar puja</button>
+          </form>
+        <?php endif; ?>
+      <?php elseif($estadoReal === 'programada'): ?>
+        <div class="notice warn">Esta subasta aún no inicia. Podrás pujar desde el <?=e($fechaInicioFormateada)?>.</div>
+      <?php else: ?>
+        <div class="notice danger">
+          <strong>Esta subasta ya finalizó.</strong>
+          <p>
+            <?php if($lider): ?>
+              Se adjudicó a <strong><?=e($lider['usuario'])?></strong> por Q <?=number_format((float)$lider['monto'], 2)?>.
+            <?php else: ?>
+              Cerró sin recibir ofertas.
+            <?php endif; ?>
+          </p>
+        </div>
+      <?php endif; ?>
+
+      <?php if($esGanador): ?>
+        <?php $detallePago = (new PagoDemo($db))->detalle((int)$subasta['id'], (int)$_SESSION['user']['id']); ?>
+        <?php if ($detallePago && (($detallePago['pago']['estado'] ?? '') === 'pagado')): ?>
+          <div class="notice success">
+            <strong>Compra registrada con tarjeta ficticia.</strong>
+            <p>Referencia: <?=e($detallePago['pago']['referencia_demo'] ?? '')?></p>
+            <a class="button sm" href="index.php?page=pago&amp;id=<?=(int)$subasta['id']?>">Ver o imprimir comprobante</a>
+          </div>
+        <?php else: ?>
+          <div class="notice info">
+            <strong>Ganaste esta subasta.</strong>
+            <p>Completa tu compra con una tarjeta de demostración. No se hace ningún cargo real.</p>
+            <a class="button sm gold" href="index.php?page=pago&amp;id=<?=(int)$subasta['id']?>">Pagar con tarjeta ficticia</a>
+          </div>
+        <?php endif; ?>
+      <?php endif; ?>
+
+      <?php if($estadoReal === 'cerrada' && (($_SESSION['user']['rol'] === 'Administrador') || $esPropietario)): ?>
+        <form method="post" action="index.php?action=eliminar_subasta" onsubmit="return confirm('¿Seguro que deseas eliminar esta subasta cerrada?');">
           <input type="hidden" name="csrf" value="<?=csrf_token()?>">
           <input type="hidden" name="subasta_id" value="<?=(int)$subasta['id']?>">
-          <label>Monto de tu puja (Q)</label>
-          <input type="number" step=".01" min="<?=($subasta['monto_actual'] + $subasta['incremento_minimo'])?>" value="<?=number_format($subasta['monto_actual'] + $subasta['incremento_minimo'], 2, '.', '')?>" name="monto" required>
-          <button type="submit">Realizar Puja</button>
+          <button type="submit" class="danger block">Eliminar subasta</button>
         </form>
       <?php endif; ?>
-    <?php elseif($estadoReal === 'programada'): ?>
-      <div style="background:#fef3c7; color:#92400e; padding:10px; border-radius:4px; margin-top:20px;">
-        Esta subasta aún no inicia. Podrás pujar a partir de: <?=e($fechaInicioFormateada)?>.
-      </div>
-    <?php else: ?>
-      <div style="background:#fee2e2; color:#991b1b; padding:12px; border-radius:4px; margin-top:20px;">
-        <strong>Esta subasta ya finalizó.</strong><br>
-        <?php if($lider): ?>
-          Adjudicada a: <strong><?=e($lider['usuario'])?></strong> por un monto final de <strong>Q <?=number_format($lider['monto'], 2)?></strong>.
-        <?php else: ?>
-          La subasta cerró sin recibir ofertas.
-        <?php endif; ?>
-      </div>
-    <?php endif; ?>
+    </section>
 
-    <?php if($esCerrada && $lider && (int)($lider['usuario_id'] ?? 0) === (int)$_SESSION['user']['id']): ?>
-      <?php $detallePago = (new PagoDemo($db))->detalle((int)$subasta['id'], (int)$_SESSION['user']['id']); ?>
-      <?php if ($detallePago && (($detallePago['pago']['estado'] ?? '') === 'pagado')): ?>
-        <div style="background:#dcfce7;color:#166534;padding:14px;border-radius:8px;margin-top:18px">
-          <strong>Compra registrada con tarjeta ficticia.</strong>
-          <p>Referencia: <?=e($detallePago['pago']['referencia_demo'] ?? '')?></p>
-          <a class="button" href="index.php?page=pago&amp;id=<?=(int)$subasta['id']?>">Ver / imprimir comprobante</a>
-        </div>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Historial de pujas</h2>
+        <?php if(!empty($historial)): ?><span class="muted"><?=count($historial)?> en total</span><?php endif; ?>
+      </div>
+      <?php if(empty($historial)): ?>
+        <div class="empty"><p><?= $estadoReal === 'cerrada' ? 'Esta subasta no recibió pujas.' : 'Todavía no hay pujas. Sé el primero en ofertar.' ?></p></div>
       <?php else: ?>
-        <div style="padding:16px;border-radius:8px;background:#eaf2ff;margin-top:18px">
-          <strong>Ganaste esta subasta.</strong>
-          <p>Completa tu compra usando una tarjeta de demostración. No se realizan cargos reales.</p>
-          <a class="button" href="index.php?page=pago&amp;id=<?=(int)$subasta['id']?>">Pagar con tarjeta ficticia (demo)</a>
-        </div>
+        <ul class="bids">
+          <?php foreach($historial as $index => $h): ?>
+            <li class="bid-row<?= $index === 0 ? ' lead' : '' ?>">
+              <span class="bid-pos"><?=$index + 1?></span>
+              <span class="bid-who">
+                <b><?=e($h['usuario'])?><?php if($index === 0): ?><span class="lead-tag">Líder</span><?php endif; ?></b>
+                <small><?=e(date('d/m/Y h:i:s A', strtotime($h['fecha'])))?></small>
+              </span>
+              <span class="bid-amount">Q <?=number_format((float)$h['monto'], 2)?></span>
+            </li>
+          <?php endforeach; ?>
+        </ul>
       <?php endif; ?>
-    <?php endif; ?>
-    <?php if($estadoReal === 'cerrada' && (($_SESSION['user']['rol'] === 'Administrador') || $esPropietario)): ?>
-      <form method="post" action="index.php?action=eliminar_subasta" onsubmit="return confirm('¿Seguro que deseas eliminar esta subasta cerrada?');" style="margin-top:15px;">
-        <input type="hidden" name="csrf" value="<?=csrf_token()?>">
-        <input type="hidden" name="subasta_id" value="<?=(int)$subasta['id']?>">
-        <button type="submit" style="background:#dc2626; color:#fff; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; width:100%;">Eliminar Subasta</button>
-      </form>
-    <?php endif; ?>
-  </section>
-
-  <section>
-    <h2>Historial de Pujas</h2>
-    <?php if(empty($historial)): ?>
-      <p>Aún no hay pujas para este artículo. ¡Sé el primero!</p>
-    <?php else: ?>
-      <table>
-        <tr>
-          <th>Posición</th>
-          <th>Fecha</th>
-          <th>Usuario</th>
-          <th>Monto</th>
-        </tr>
-        <?php foreach($historial as $index => $h): ?>
-          <tr>
-            <td><?= $index === 0 ? '<strong>1 (Líder)</strong>' : ($index + 1) ?></td>
-            <td><?=e(date('d/m/Y h:i:s A', strtotime($h['fecha'])))?></td>
-            <td><?=e($h['usuario'])?></td>
-            <td>Q <?=number_format($h['monto'], 2)?></td>
-          </tr>
-        <?php endforeach; ?>
-      </table>
-    <?php endif; ?>
-  </section>
+    </section>
+  </div>
 </div>
+
+<script>
+// Galería: al elegir una miniatura se muestra en grande
+(function() {
+  const principal = document.getElementById('galeria-principal');
+  const miniaturas = document.querySelectorAll('.gallery-thumbs img');
+  if (!principal || !miniaturas.length) return;
+  miniaturas.forEach(function(m) {
+    m.addEventListener('click', function() {
+      principal.src = m.src;
+      miniaturas.forEach(function(x) { x.classList.remove('on'); });
+      m.classList.add('on');
+    });
+  });
+})();
+</script>
 
 <?php if($estadoReal !== 'cerrada'): ?>
 <script>
@@ -152,13 +193,14 @@ $imagenes = json_decode($subasta['imagen'] ?? '[]', true);
     const diferencia = fechaFin - ahora;
 
     if (diferencia <= 0) {
-      el.textContent = 'Tiempo agotado. Actualizando estado...';
+      el.textContent = 'Tiempo agotado. Actualizando...';
       if (!recargando) {
         recargando = true;
         setTimeout(function() { window.location.reload(); }, 1500);
       }
       return false;
     }
+    el.classList.toggle('is-urgent', diferencia < 3600000);
 
     const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
     const horas = Math.floor((diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));

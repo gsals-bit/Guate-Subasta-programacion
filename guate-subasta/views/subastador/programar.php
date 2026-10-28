@@ -17,40 +17,71 @@ $qProgramacion = $db->prepare("
 ");
 $qProgramacion->execute([$propietarioProgramacion]);
 $articulosDisponibles = $qProgramacion->fetchAll(PDO::FETCH_ASSOC);
+
+if (!isset($ic, $icons)) { $ic = fn($d) => ''; $icons = []; }
 ?>
-<h1>Programar subasta (máximo 30 minutos)</h1>
-<section class="panel narrow" style="max-width:700px">
-  <p>Selecciona un artículo, cuándo comenzará y cuánto durará. Puedes elegir desde <strong>1 hasta 30 minutos</strong>. El cierre se calcula automáticamente.</p>
-  <p style="font-size:.9em;color:#475569">Un artículo que ya tenga una subasta, incluso si finalizó, no puede volver a programarse. Las subastas programadas se modifican desde «Modificar horario».</p>
+<h1>Programar subasta</h1>
+<p>Elige un artículo, cuándo empieza y cuánto dura. El cierre se calcula solo.</p>
+
+<div class="program-grid">
+  <section class="panel">
   <?php if (empty($articulosDisponibles)): ?>
-    <p>No hay artículos nuevos disponibles para programar. Los artículos con subastas anteriores no se muestran.</p>
-    <a class="button" href="index.php?page=articulos">Registrar nuevo artículo</a>
+    <div class="empty">
+      <p>No tienes artículos nuevos para programar. Los que ya tuvieron una subasta no se vuelven a ofrecer.</p>
+      <a class="button sm" href="index.php?page=articulos">Registrar un artículo</a>
+    </div>
   <?php else: ?>
-  <form method="post" action="index.php?action=programar" id="formProgramar">
-    <input type="hidden" name="csrf" value="<?=e(csrf_token())?>">
-    <label for="articulo_select">Artículo</label>
-    <select name="articulo_id" id="articulo_select" required>
-      <option value="">Selecciona un artículo</option>
-      <?php foreach ($articulosDisponibles as $a): ?>
-      <option value="<?=(int)$a['id']?>" data-precio="<?=(float)$a['precio_base']?>">
-        <?=e($a['nombre'])?> (Q <?=number_format((float)$a['precio_base'],2)?>)
-      </option>
-      <?php endforeach; ?>
-    </select>
-    <label for="inicio">Fecha y hora de inicio</label>
-    <input id="inicio" type="datetime-local" name="inicio" required
-           min="<?=e($inicioSugerido->modify('-12 minutes')->format('Y-m-d\TH:i'))?>"
-           value="<?=e($inicioSugerido->format('Y-m-d\TH:i'))?>">
-    <label for="duracion_minutos">¿Cuántos minutos durará la subasta?</label>
-    <input id="duracion_minutos" type="number" name="duracion_minutos" min="1" max="30" step="1" value="30" required>
-    <small>Entre 1 y 30 minutos; no se admiten decimales.</small>
-    <p id="textoFin" style="color:#1d4ed8" aria-live="polite"></p>
-    <label for="incremento">Incremento mínimo por puja (Q)</label>
-    <input id="incremento" name="incremento" type="number" step="0.01" min="0.01" required>
-    <button type="submit">Programar y avisar a los usuarios</button>
-  </form>
+    <form method="post" action="index.php?action=programar" id="formProgramar">
+      <input type="hidden" name="csrf" value="<?=e(csrf_token())?>">
+      <label for="articulo_select" style="margin-top:0">Artículo</label>
+      <select name="articulo_id" id="articulo_select" required>
+        <option value="">Selecciona un artículo</option>
+        <?php foreach ($articulosDisponibles as $a): ?>
+        <option value="<?=(int)$a['id']?>" data-precio="<?=(float)$a['precio_base']?>">
+          <?=e($a['nombre'])?> (Q <?=number_format((float)$a['precio_base'],2)?>)
+        </option>
+        <?php endforeach; ?>
+      </select>
+
+      <div class="form-row">
+        <div>
+          <label for="inicio">Inicio</label>
+          <input id="inicio" type="datetime-local" name="inicio" required
+                 min="<?=e($inicioSugerido->modify('-12 minutes')->format('Y-m-d\TH:i'))?>"
+                 value="<?=e($inicioSugerido->format('Y-m-d\TH:i'))?>">
+        </div>
+        <div>
+          <label for="duracion_minutos">Duración (minutos)</label>
+          <input id="duracion_minutos" type="number" name="duracion_minutos" min="1" max="30" step="1" value="30" required>
+        </div>
+      </div>
+      <div class="quick-mins" aria-label="Duraciones rápidas">
+        <?php foreach([5, 10, 15, 30] as $m): ?>
+          <button type="button" class="sm ghost" data-min="<?=$m?>"><?=$m?> min</button>
+        <?php endforeach; ?>
+      </div>
+      <p id="textoFin" class="notice info" aria-live="polite"></p>
+
+      <label for="incremento">Incremento mínimo por puja (Q)</label>
+      <input id="incremento" name="incremento" type="number" step="0.01" min="0.01" required>
+      <p class="hint">Se sugiere según el precio base del artículo; puedes cambiarlo.</p>
+
+      <button type="submit" class="gold block">Programar y avisar a los usuarios</button>
+    </form>
   <?php endif; ?>
-</section>
+  </section>
+
+  <section class="panel">
+    <h2>Antes de programar</h2>
+    <ul class="tips">
+      <li><?=$ic($icons['calendar'] ?? '')?><span>Cada subasta dura entre <strong>1 y 30 minutos</strong>, sin decimales.</span></li>
+      <li><?=$ic($icons['box'] ?? '')?><span>Un artículo que ya tuvo una subasta, aunque haya terminado, no puede volver a programarse.</span></li>
+      <li><?=$ic($icons['gavel'] ?? '')?><span>Si te equivocas con el horario, cámbialo desde «Modificar horario» en el listado de subastas.</span></li>
+      <li><?=$ic($icons['bell'] ?? '')?><span>Al programar, los usuarios reciben un aviso en sus notificaciones.</span></li>
+    </ul>
+  </section>
+</div>
+
 <script>
 (function(){
  const fi=document.getElementById('inicio');
@@ -62,16 +93,19 @@ $articulosDisponibles = $qProgramacion->fetchAll(PDO::FETCH_ASSOC);
    if(!fi || !dur || !fin) return;
    const minutos=Number(dur.value);
    if(!fi.value || !Number.isInteger(minutos) || minutos<1 || minutos>30){
-      fin.textContent='Selecciona un inicio y una duración válida entre 1 y 30 minutos.';
+      fin.textContent='Elige un inicio y una duración válida entre 1 y 30 minutos.';
       return;
    }
    const fecha=new Date(fi.value);
-   if(isNaN(fecha.getTime())){fin.textContent='Fecha de inicio inválida.';return;}
+   if(isNaN(fecha.getTime())){fin.textContent='La fecha de inicio no es válida.';return;}
    fecha.setMinutes(fecha.getMinutes()+minutos);
    fin.textContent='Termina automáticamente: '+fecha.toLocaleString('es-GT',{dateStyle:'medium',timeStyle:'short'});
  }
  fi?.addEventListener('change',actualizarCierre);
  dur?.addEventListener('input',actualizarCierre);
+ document.querySelectorAll('[data-min]').forEach(function(b){
+   b.addEventListener('click',function(){ dur.value=b.dataset.min; actualizarCierre(); });
+ });
  actualizarCierre();
  if(art&&inc){art.addEventListener('change',function(){
   const precio=Number(this.selectedOptions[0]?.dataset.precio||0);
