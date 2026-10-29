@@ -249,6 +249,13 @@ if ($action === 'eliminar_usuario') {
 $page = $_GET['page'] ?? (empty($_SESSION['user']) ? 'login' : 'dashboard');
 if ($page === 'logout') (new AuthController($db))->logout();
 
+// NUEVO: al abrir el detalle de una subasta, sus avisos pasan a leídos.
+if ($page === 'detalle' && !empty($_SESSION['user']['id']) && class_exists('AgendaSubastas')) {
+    try {
+        (new AgendaSubastas($db))->marcarLeidosSubasta((int)$_SESSION['user']['id'], (int)($_GET['id'] ?? 0));
+    } catch (Throwable $ignorado) {}
+}
+
 require __DIR__.'/views/layouts/header.php';
 switch ($page) {
     case 'login':

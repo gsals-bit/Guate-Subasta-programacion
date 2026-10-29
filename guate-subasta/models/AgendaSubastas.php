@@ -159,6 +159,12 @@ class AgendaSubastas {
         $q=$this->db->prepare('INSERT IGNORE INTO avisos_subastas_leidos(usuario_id,aviso_id) SELECT ?,v.id FROM avisos_subastas v WHERE v.creado_por<>?');
         $q->execute([$userId,$userId]);
     }
+    /** Marca como leídos los avisos de una sola subasta para este usuario. */
+public function marcarLeidosSubasta(int $userId, int $subastaId): void {
+    if ($userId <= 0 || $subastaId <= 0) return;
+    $q=$this->db->prepare('INSERT IGNORE INTO avisos_subastas_leidos(usuario_id,aviso_id) SELECT ?,v.id FROM avisos_subastas v WHERE v.subasta_id=? AND v.creado_por<>?');
+    $q->execute([$userId,$subastaId,$userId]);
+}
 
     public function correoActivo(int $userId): bool {
         $q=$this->db->prepare('SELECT correo_habilitado FROM preferencias_avisos_subastas WHERE usuario_id=?');
