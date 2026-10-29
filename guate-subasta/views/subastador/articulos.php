@@ -94,8 +94,9 @@ $primeraImg = function ($raw): ?string {
           </select>
         </div>
         <div>
-          <label for="in-precio">Precio base (Q)</label>
-          <input id="in-precio" type="number" step=".01" min="0.01" name="precio_base" required>
+          <label for="in-precio-visible">Precio base (Q)</label>
+          <input id="in-precio-visible" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" required>
+          <input id="in-precio" type="hidden" name="precio_base">
         </div>
       </div>
 
@@ -244,6 +245,55 @@ $primeraImg = function ($raw): ?string {
       contadorDesc.textContent = longitud + ' / 500 caracteres';
       contadorDesc.style.color = longitud >= 450 ? '#d6403f' : (longitud >= 250 ? '#b26a00' : '#0f9d74');
       contadorDesc.style.fontWeight = longitud >= 450 ? '700' : '400';
+    });
+  }
+
+  // 1b. Precio base con comas de millares mientras se escribe (50000 -> 50,000).
+  // Al servidor llega solo el número limpio, a través del campo oculto "precio_base".
+  const precioVisible = document.getElementById('in-precio-visible');
+  const precioReal = document.getElementById('in-precio');
+
+  function formatearPrecio() {
+    const el = precioVisible;
+    const pos = el.selectionStart;
+    let antes = el.value.slice(0, pos).replace(/[^0-9.]/g, '').length;
+
+    const limpio = el.value.replace(/[^0-9.]/g, '');
+    const i = limpio.indexOf('.');
+    let entero = (i === -1 ? limpio : limpio.slice(0, i)).replace(/^0+(?=\d)/, '').slice(0, 10);
+    const decimal = i === -1 ? null : limpio.slice(i + 1).replace(/\./g, '').slice(0, 2);
+    if (entero === '' && decimal !== null) { entero = '0'; antes += 1; }
+
+    const texto = entero.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (decimal !== null ? '.' + decimal : '');
+    el.value = texto;
+
+    // Mantener el cursor junto al mismo dígito después de insertar las comas
+    let nueva = texto.length;
+    if (antes === 0) {
+      nueva = 0;
+    } else {
+      let cuenta = 0;
+      for (let k = 0; k < texto.length; k++) {
+        if (/[0-9.]/.test(texto[k])) cuenta++;
+        if (cuenta === antes) { nueva = k + 1; break; }
+      }
+    }
+    el.setSelectionRange(nueva, nueva);
+
+    precioReal.value = entero + (decimal !== null ? '.' + decimal : '');
+    const n = parseFloat(precioReal.value);
+    el.setCustomValidity(precioReal.value !== '' && !(n >= 0.01) ? 'Ingresa un precio mayor a 0.' : '');
+  }
+
+  if (precioVisible && precioReal) {
+    precioVisible.addEventListener('input', formatearPrecio);
+    precioVisible.addEventListener('blur', function () {
+      // Al salir del campo se muestran siempre dos decimales (50,000 -> 50,000.00)
+      if (precioReal.value === '') return;
+      const n = parseFloat(precioReal.value);
+      if (isNaN(n)) return;
+      precioVisible.value = n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      precioReal.value = n.toFixed(2);
     });
   }
 
