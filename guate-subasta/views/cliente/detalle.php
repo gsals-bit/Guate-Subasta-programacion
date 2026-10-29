@@ -89,10 +89,12 @@ $tieneMapa = is_numeric($subasta['ubicacion_lat'] ?? null) && is_numeric($subast
           <form class="bid-form" method="post" action="index.php?action=pujar">
             <input type="hidden" name="csrf" value="<?=csrf_token()?>">
             <input type="hidden" name="subasta_id" value="<?=(int)$subasta['id']?>">
-            <label for="monto">Tu puja</label>
+            <label for="monto-visible">Tu puja</label>
             <div class="money-input">
               <span>Q</span>
-              <input id="monto" type="number" step=".01" min="<?=$minimoPuja?>" value="<?=number_format($minimoPuja, 2, '.', '')?>" name="monto" required>
+              <!-- El campo visible muestra el monto con comas; el campo oculto "monto" envía el número limpio (ej. 1000.00) -->
+              <input id="monto-visible" type="text" inputmode="decimal" autocomplete="off" data-minimo="<?=number_format($minimoPuja, 2, '.', '')?>" value="<?=number_format($minimoPuja, 2, '.', ',')?>" required>
+              <input id="monto" type="hidden" name="monto" value="<?=number_format($minimoPuja, 2, '.', '')?>">
             </div>
             <p class="hint">La puja mínima es Q <?=number_format($minimoPuja, 2)?>.</p>
             <button type="submit" class="gold block">Realizar puja</button>
@@ -163,6 +165,61 @@ $tieneMapa = is_numeric($subasta['ubicacion_lat'] ?? null) && is_numeric($subast
     </section>
   </div>
 </div>
+
+<script>
+// Monto de la puja con comas de millares mientras se escribe (1000 -> 1,000).
+// Al servidor llega solo el número limpio, a través del campo oculto "monto".
+(function() {
+  const visible = document.getElementById('monto-visible');
+  const real = document.getElementById('monto');
+  if (!visible || !real) return;
+  const minimo = parseFloat(visible.dataset.minimo) || 0.01;
+  const enComas = n => n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+  function formatear() {
+    const pos = visible.selectionStart;
+    let antes = visible.value.slice(0, pos).replace(/[^0-9.]/g, '').length;
+
+    const limpio = visible.value.replace(/[^0-9.]/g, '');
+    const i = limpio.indexOf('.');
+    let entero = (i === -1 ? limpio : limpio.slice(0, i)).replace(/^0+(?=\d)/, '').slice(0, 10);
+    const decimal = i === -1 ? null : limpio.slice(i + 1).replace(/\./g, '').slice(0, 2);
+    if (entero === '' && decimal !== null) { entero = '0'; antes += 1; }
+
+    const texto = entero.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (decimal !== null ? '.' + decimal : '');
+    visible.value = texto;
+
+    if (document.activeElement === visible) {
+      // Mantener el cursor junto al mismo dígito después de insertar las comas
+      let nueva = texto.length;
+      if (antes === 0) {
+        nueva = 0;
+      } else {
+        let cuenta = 0;
+        for (let k = 0; k < texto.length; k++) {
+          if (/[0-9.]/.test(texto[k])) cuenta++;
+          if (cuenta === antes) { nueva = k + 1; break; }
+        }
+      }
+      visible.setSelectionRange(nueva, nueva);
+    }
+
+    real.value = entero + (decimal !== null ? '.' + decimal : '');
+    const n = parseFloat(real.value);
+    visible.setCustomValidity(real.value !== '' && !(n >= minimo - 0.001) ? 'La puja mínima es Q ' + enComas(minimo) + '.' : '');
+  }
+
+  visible.addEventListener('input', formatear);
+  visible.addEventListener('blur', function() {
+    // Al salir del campo se muestran siempre dos decimales (1,000 -> 1,000.00)
+    const n = parseFloat(real.value);
+    if (isNaN(n)) return;
+    visible.value = enComas(n);
+    real.value = n.toFixed(2);
+  });
+  formatear();
+})();
+</script>
 
 <script>
 // Galería: al elegir una miniatura se muestra en grande
