@@ -73,7 +73,7 @@ $puedeProgramar = in_array($rolSesion, ['Cliente', 'Subastador', 'Administrador'
 
     <div class="lot-cover">
       <?php if($imagenPrincipal): ?>
-        <img src="<?=e($imagenPrincipal)?>" alt="Imagen de <?=e($s['articulo'])?>" loading="lazy">
+        <img src="<?=e($imagenPrincipal)?>" alt="Imagen de <?=e($s['articulo'])?>" loading="lazy" onerror="this.hidden=true;this.parentNode.classList.add('no-img')">
       <?php else: ?>
         <span>Sin imagen</span>
       <?php endif; ?>

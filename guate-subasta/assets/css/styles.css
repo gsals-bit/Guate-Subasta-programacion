@@ -502,7 +502,8 @@ textarea { min-height: 95px; }
   color: var(--gold);
   font-family: var(--font-display); font-weight: 800; font-size: 1.2rem;
 }
-.lot-tile img { width: 100%; height: 100%; object-fit: cover; }
+.lot-tile { position: relative; }
+.lot-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: var(--navy); }
 .lot-main { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
 .lot-name { color: var(--ink); font-weight: 700; font-size: 1rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lot-name:hover { color: var(--blue); }
@@ -639,11 +640,14 @@ input[type=file]::file-selector-button { margin-right: 12px; padding: 7px 14px; 
 
 .lot-card { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow); transition: transform .2s ease, box-shadow .2s ease; }
 .lot-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
-.lot-cover { position: relative; height: 200px; display: grid; place-items: center; background: #f1f3f9; color: var(--muted); font-size: .9rem; }
-.lot-cover img { width: 100%; height: 100%; object-fit: cover; }
+/* Marco de imagen de tamaño fijo: cualquier foto se ajusta dentro de él (object-fit: contain = se ve completa;
+   cámbialo a "cover" si prefieres que llene todo el cuadro recortando los bordes). */
+.lot-cover { position: relative; flex-shrink: 0; height: 220px; overflow: hidden; display: grid; place-items: center; background: #f1f3f9; color: var(--muted); font-size: .9rem; }
+.lot-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 10px; background: #fff; }
+.lot-cover.no-img::after { content: 'Imagen no disponible'; }
 .lot-card.is-closed .lot-cover img { filter: grayscale(.55); opacity: .85; }
-.lot-cover .badge { position: absolute; top: 12px; left: 12px; box-shadow: var(--shadow); }
-.lot-cover .countdown { position: absolute; top: 12px; right: 12px; box-shadow: var(--shadow); }
+.lot-cover .badge { position: absolute; z-index: 1; top: 12px; left: 12px; box-shadow: var(--shadow); }
+.lot-cover .countdown { position: absolute; z-index: 1; top: 12px; right: 12px; box-shadow: var(--shadow); }
 .lot-body { display: flex; flex-direction: column; gap: 4px; flex: 1; padding: 18px 20px 20px; }
 .lot-cat { font-size: .82rem; color: var(--muted); }
 .lot-card h3 { margin: 0 0 6px; font-size: 1.15rem; line-height: 1.25; color: var(--ink); }
