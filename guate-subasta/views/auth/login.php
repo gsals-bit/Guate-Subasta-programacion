@@ -26,11 +26,6 @@
       <button type="submit" class="gold block" style="margin-top:20px">Iniciar sesión</button>
     </form>
     <p class="auth-foot">¿No tienes cuenta? <a href="index.php?page=registro">Regístrate</a></p>
-
-    <div class="demo-box">
-      <span><b>Cuenta de demostración:</b> admin@guate.test / Admin123!</span>
-      <button type="button" class="sm ghost" id="demo-fill">Usar estos datos</button>
-    </div>
   </div>
 </div>
 
@@ -42,10 +37,6 @@
     const oculto = pw.type === 'password';
     pw.type = oculto ? 'text' : 'password';
     toggle.textContent = oculto ? 'Ocultar' : 'Mostrar';
-  });
-  document.getElementById('demo-fill').addEventListener('click', function () {
-    document.getElementById('login-email').value = 'admin@guate.test';
-    pw.value = 'Admin123!';
   });
 })();
 </script>
