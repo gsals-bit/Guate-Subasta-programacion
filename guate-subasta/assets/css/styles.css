@@ -860,3 +860,29 @@ td.cell-wrap, th.cell-wrap { white-space: normal; min-width: 260px; max-width: 5
   .filters { display: none !important; }
   .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ==========================================================
+   ESTADÍSTICAS (views/admin/estadisticas.php)
+   ========================================================== */
+.page-head .audit-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.audit-actions .button { margin-top: 0; }
+.chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.chart-card { min-width: 0; padding: 22px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow); }
+.chart-card h2 { margin: 0 0 4px; }
+.chart-card p { margin: 0 0 14px; color: var(--muted); font-size: .88rem; }
+.chart-card canvas { display: block; width: 100%; height: auto; border-radius: var(--r-sm); }
+.chart-card button { margin-top: 12px; }
+
+/* Íconos propios de las tarjetas de esta pantalla */
+.stats.kpi > div:nth-child(1) { color: var(--blue); }
+.stats.kpi > div:nth-child(2) { color: var(--green); }
+.stats.kpi > div:nth-child(3) { color: var(--red); --stat-ico: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='m15 9-6 6'/><path d='m9 9 6 6'/></svg>"); }
+.stats.kpi > div:nth-child(4) { color: var(--gold); --stat-ico: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect width='20' height='14' x='2' y='5' rx='2'/><path d='M2 10h20'/></svg>"); }
+.stats.kpi > div:nth-child(1) { --stat-ico: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m14 13-8.5 8.5a2.12 2.12 0 0 1-3-3L11 10'/><path d='m16 16 6-6'/><path d='m8 8 6-6'/><path d='m9 7 8 8'/><path d='m21 11-8-8'/></svg>"); }
+.stats.kpi > div:nth-child(2) { --stat-ico: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m22 7-8.5 8.5-5-5L2 17'/><path d='M16 7h6v6'/></svg>"); }
+
+@media (max-width: 850px) { .chart-grid { grid-template-columns: 1fr; } }
+@media print {
+  .chart-grid { grid-template-columns: repeat(2, 1fr); }
+  .chart-card { break-inside: avoid; box-shadow: none; }
+}
