@@ -27,4 +27,19 @@
   tick(); setInterval(tick, 1000);
 })();
 </script>
+<script>
+(function () {
+  var pagina = new URLSearchParams(location.search).get('page') || '';
+  var conFormulario = ['articulos', 'programar', 'editar-horario', 'pago', 'login', 'registro'];
+  if (conFormulario.indexOf(pagina) !== -1) return;
+  function vueltaAtras(e) {
+    if (e && e.persisted) return true;
+    var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    return !!(nav && nav.type === 'back_forward');
+  }
+  window.addEventListener('pageshow', function (e) {
+    if (vueltaAtras(e)) location.reload();
+  });
+})();
+</script>
 </body></html>
