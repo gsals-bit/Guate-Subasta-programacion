@@ -31,7 +31,7 @@ foreach ($avisosAgenda as $avx) { if (empty($avx['leido'])) $sinLeer++; }
             <p><?=e($av['mensaje'])?></p>
             <small><?=e(date('d/m/Y h:i A',strtotime($av['creado_en'])))?></small>
           </div>
-          <a class="button sm ghost" href="index.php?page=detalle&amp;id=<?=(int)$av['subasta_id']?>">Ver subasta</a>
+          <a class="button sm ghost" href="index.php?page=detalle&amp;id=<?=(int)$av['subasta_id']?>&amp;aviso_id=<?=(int)$av['id']?>">Ver subasta</a>
         </div>
       <?php endforeach; ?>
       </div>

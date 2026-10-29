@@ -159,12 +159,13 @@ class AgendaSubastas {
         $q=$this->db->prepare('INSERT IGNORE INTO avisos_subastas_leidos(usuario_id,aviso_id) SELECT ?,v.id FROM avisos_subastas v WHERE v.creado_por<>?');
         $q->execute([$userId,$userId]);
     }
-    /** Marca como leídos los avisos de una sola subasta para este usuario. */
-public function marcarLeidosSubasta(int $userId, int $subastaId): void {
-    if ($userId <= 0 || $subastaId <= 0) return;
-    $q=$this->db->prepare('INSERT IGNORE INTO avisos_subastas_leidos(usuario_id,aviso_id) SELECT ?,v.id FROM avisos_subastas v WHERE v.subasta_id=? AND v.creado_por<>?');
-    $q->execute([$userId,$subastaId,$userId]);
-}
+/** Marca como leído únicamente el aviso seleccionado de la subasta para este usuario. */
+    public function marcarLeidosSubasta(int $userId, int $subastaId, int $avisoId = 0): void {
+        $avisoId = $avisoId > 0 ? $avisoId : (int)($_GET['aviso_id'] ?? 0);
+        if ($userId <= 0 || $subastaId <= 0 || $avisoId <= 0) return;
+        $q=$this->db->prepare('INSERT IGNORE INTO avisos_subastas_leidos(usuario_id,aviso_id) SELECT ?,v.id FROM avisos_subastas v WHERE v.id=? AND v.subasta_id=? AND v.creado_por<>?');
+        $q->execute([$userId,$avisoId,$subastaId,$userId]);
+    }
 /** Aviso para los demás usuarios cuando alguien puja. Solo aviso dentro del sitio (sin correo). */
 public function avisarPuja(int $subastaId, int $usuarioId, float $monto): void {
     if ($subastaId <= 0 || $usuarioId <= 0) return;
