@@ -834,3 +834,29 @@ input[type=file]::file-selector-button { margin-right: 12px; padding: 7px 14px; 
 .verify-icon .ico { width: 30px; height: 30px; }
 .verify-icon.ok { background: var(--green-soft); color: var(--green); }
 .verify-icon.fail { background: var(--red-soft); color: var(--red); }
+
+/* ==========================================================
+   ADMINISTRACIÓN Y AUDITORÍA (usuarios.php, auditoria.php)
+   ========================================================== */
+.badge.info { background: #e3ebff; color: #2548c4; }
+.badge.rol-administrador { background: var(--gold-soft); color: #8a5b00; }
+.badge.rol-auditor { background: #ece8fd; color: #5b3fd0; }
+.badge.rol-subastador { background: #e3ebff; color: #2548c4; }
+.badge.rol-cliente { background: #eceef4; color: #4a5570; }
+
+.user-cell { display: flex; align-items: center; gap: 12px; }
+.avatar.lg { width: 40px; height: 40px; font-size: 1rem; flex-shrink: 0; }
+.user-info { display: flex; flex-direction: column; line-height: 1.35; min-width: 0; }
+.user-info b { color: var(--ink); font-weight: 600; }
+.user-info small { color: var(--muted); }
+.fila-usuario[data-activo="0"] .user-cell { opacity: .55; }
+
+.row-actions.wrap { flex-wrap: wrap; }
+.row-actions select { width: auto; margin: 0; padding: 7px 10px; font-size: .88rem; }
+.audit-actions button { margin-top: 0; }
+td.cell-wrap, th.cell-wrap { white-space: normal; min-width: 260px; max-width: 520px; }
+
+@media print {
+  .filters { display: none !important; }
+  .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
