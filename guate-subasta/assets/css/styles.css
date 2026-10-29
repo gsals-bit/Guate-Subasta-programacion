@@ -515,23 +515,73 @@ textarea { min-height: 95px; }
 .lot-time { align-items: flex-start; }
 
 /* Accesos rápidos */
-.quick { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.quick { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+
 .quick-link {
   display: flex; align-items: center; gap: 14px;
   padding: 12px 14px;
+  background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   color: var(--text);
+  box-shadow: 0 1px 3px rgba(10,18,38,.03);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  overflow: hidden;
+  position: relative;
 }
-.quick-link:hover { border-color: #c3cbe0; background: #f8f9fc; }
-.quick-ico { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; background: #eaeffd; color: var(--blue); flex-shrink: 0; }
-.quick-text { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
-.quick-text b { font-weight: 600; font-size: .95rem; color: var(--ink); }
-.quick-text small { color: var(--muted); font-size: .82rem; }
-.quick-link.primary { background: var(--navy); border-color: var(--navy); }
-.quick-link.primary:hover { background: var(--navy-2); }
-.quick-link.primary .quick-ico { background: var(--gold); color: var(--ink); }
+
+/* Efecto hover suave que levanta la tarjeta */
+.quick-link:hover { 
+  border-color: #c3cbe0; 
+  background: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -6px rgba(47,91,234,.12), 0 2px 4px rgba(10,18,38,.04);
+}
+
+/* Fondo decorativo sutil a la derecha (opcional pero le da un toque moderno) */
+.quick-link::before {
+  content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 4px;
+  background: var(--blue);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.quick-link:hover::before { opacity: 1; }
+
+.quick-ico { 
+  width: 42px; height: 42px; 
+  display: grid; place-items: center; 
+  border-radius: 10px; 
+  background: var(--blue); 
+  color: #fff; 
+  flex-shrink: 0; 
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.quick-link:hover .quick-ico { transform: scale(1.08); box-shadow: 0 4px 10px -2px rgba(47,91,234,.4); }
+
+.quick-text { display: flex; flex-direction: column; line-height: 1.35; min-width: 0; }
+.quick-text b { font-weight: 700; font-size: .95rem; color: var(--ink); transition: color 0.15s; }
+.quick-text small { color: var(--muted); font-size: .82rem; margin-top: 2px; }
+.quick-link:hover .quick-text b { color: var(--blue); }
+
+/* Estilo para el botón principal "Ver subastas" (el primero) */
+.quick-link.primary { 
+  background: linear-gradient(145deg, var(--navy) 0%, var(--navy-2) 100%); 
+  border-color: var(--navy); 
+  box-shadow: 0 4px 12px -4px rgba(16, 26, 52, 0.4);
+}
+.quick-link.primary::before { background: var(--gold); }
+.quick-link.primary:hover { 
+  transform: translateY(-2px); 
+  box-shadow: 0 10px 20px -6px rgba(16, 26, 52, 0.5); 
+}
+.quick-link.primary .quick-ico { 
+  background: var(--gold); 
+  color: var(--ink); 
+  box-shadow: 0 4px 12px -2px rgba(232, 163, 23, 0.4);
+}
+.quick-link.primary:hover .quick-ico { box-shadow: 0 6px 14px -2px rgba(232, 163, 23, 0.6); }
 .quick-link.primary .quick-text b { color: #fff; }
+.quick-link.primary:hover .quick-text b { color: var(--gold); }
 .quick-link.primary .quick-text small { color: #a9b5d2; }
 
 @media (max-width: 1100px) { .dash-grid { grid-template-columns: 1fr; } }
