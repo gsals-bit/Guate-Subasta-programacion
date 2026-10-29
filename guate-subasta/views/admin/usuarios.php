@@ -2,98 +2,104 @@
 $rolesDisponibles = ['Cliente', 'Subastador', 'Auditor', 'Administrador'];
 $idSesionActual = (int)($_SESSION['user']['id'] ?? 0);
 ?>
-<h1>Usuarios y roles</h1>
-<p>Administración de cuentas registradas, asignación de permisos y estado de acceso.</p>
-
-<section class="panel" style="margin-bottom:20px; padding:15px;">
-  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; align-items:end;">
-    <div>
-      <label style="margin-top:0;">Buscar por nombre o correo</label>
-      <input type="text" id="filtro-usuario-texto" placeholder="Escribe nombre o email...">
-    </div>
-    <div>
-      <label style="margin-top:0;">Filtrar por rol</label>
-      <select id="filtro-usuario-rol">
-        <option value="">Todos los roles</option>
-        <?php foreach($rolesDisponibles as $r): ?>
-          <option value="<?=e(mb_strtolower($r))?>"><?=e($r)?></option>
-        <?php endforeach; ?>
-      </select>
-    </div>
-    <div>
-      <label style="margin-top:0;">Estado de cuenta</label>
-      <select id="filtro-usuario-activo">
-        <option value="">Todos</option>
-        <option value="1">Activos</option>
-        <option value="0">Inactivos</option>
-      </select>
-    </div>
+<div class="page-head">
+  <div>
+    <h1>Usuarios y roles</h1>
+    <p>Administra las cuentas registradas, sus permisos y su acceso.</p>
   </div>
+</div>
+
+<section class="panel filters">
+  <div class="search">
+    <label for="filtro-usuario-texto">Buscar por nombre o correo</label>
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="text" id="filtro-usuario-texto" placeholder="Nombre o correo">
+  </div>
+  <div>
+    <label for="filtro-usuario-rol">Rol</label>
+    <select id="filtro-usuario-rol">
+      <option value="">Todos los roles</option>
+      <?php foreach($rolesDisponibles as $r): ?>
+        <option value="<?=e(mb_strtolower($r))?>"><?=e($r)?></option>
+      <?php endforeach; ?>
+    </select>
+  </div>
+  <div>
+    <label for="filtro-usuario-activo">Estado de la cuenta</label>
+    <select id="filtro-usuario-activo">
+      <option value="">Todos</option>
+      <option value="1">Activos</option>
+      <option value="0">Inactivos</option>
+    </select>
+  </div>
+  <div class="count" id="conteo-usuarios" aria-live="polite"></div>
 </section>
 
-<table>
-  <tr>
-    <th>ID</th>
-    <th>Nombre</th>
-    <th>Correo</th>
-    <th>Rol actual</th>
-    <th>Estado</th>
-    <th>Actualizar permisos / acceso</th>
-  </tr>
-  <?php foreach($usuarios as $u): 
-    $esMismoUsuario = ((int)$u['id'] === $idSesionActual);
-    $activoInt = (int)($u['activo'] ?? 1);
-  ?>
-    <tr class="fila-usuario"
-        data-texto="<?=e(mb_strtolower(($u['nombre'] ?? '').' '.($u['email'] ?? '')))?>"
-        data-rol="<?=e(mb_strtolower($u['rol'] ?? ''))?>"
-        data-activo="<?=$activoInt?>">
-      <td>#<?=(int)$u['id']?></td>
-      <td>
-        <strong><?=e($u['nombre'])?></strong>
-        <?php if($esMismoUsuario): ?>
-          <small style="opacity:0.75;">(Tu cuenta)</small>
-        <?php endif; ?>
-      </td>
-      <td><?=e($u['email'])?></td>
-      <td><span class="badge"><?=e($u['rol'])?></span></td>
-      <td>
-        <?php if($activoInt === 1): ?>
-          <span style="background:#16a34a; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.8em; font-weight:bold;">Activo</span>
-        <?php else: ?>
-          <span style="background:#dc2626; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.8em; font-weight:bold;">Inactivo</span>
-        <?php endif; ?>
-      </td>
-      <td>
-        <?php if($esMismoUsuario): ?>
-          <small style="opacity:0.75;">Sesión actual protegida</small>
-        <?php else: ?>
-          <form method="post" action="index.php?action=actualizar_usuario" style="display:flex; gap:8px; align-items:center; margin:0;">
-            <input type="hidden" name="csrf" value="<?=csrf_token()?>">
-            <input type="hidden" name="usuario_id" value="<?=(int)$u['id']?>">
-            <select name="rol" style="margin:0; padding:6px; width:auto;">
-              <?php foreach($rolesDisponibles as $r): ?>
-                <option value="<?=e($r)?>" <?=($u['rol'] === $r) ? 'selected' : ''?>><?=e($r)?></option>
-              <?php endforeach; ?>
-            </select>
-            <select name="activo" style="margin:0; padding:6px; width:auto;">
-              <option value="1" <?=$activoInt === 1 ? 'selected' : ''?>>Activo</option>
-              <option value="0" <?=$activoInt === 0 ? 'selected' : ''?>>Inactivo</option>
-            </select>
-            <button type="submit" style="padding:6px 12px; margin:0;">Guardar</button>
-          </form>
-          <form method="post" action="index.php?action=eliminar_usuario" onsubmit="return confirm('¿Desactivar este usuario? Se conservará el historial.');">
-            <input type="hidden" name="csrf" value="<?=csrf_token()?>">
-            <input type="hidden" name="usuario_id" value="<?=(int)$u['id']?>">
-            <button type="submit" style="background:#b91c1c;color:white;">Eliminar acceso</button>
-          </form>
-        <?php endif; ?>
-      </td>
+<section class="panel table-panel">
+  <table>
+    <tr>
+      <th>Usuario</th>
+      <th>Rol</th>
+      <th>Estado</th>
+      <th>Permisos y acceso</th>
     </tr>
-  <?php endforeach; ?>
-</table>
-
-<p id="usuarios-sin-resultados" style="display:none; opacity:0.8; margin-top:15px;">No se encontraron usuarios con esos criterios.</p>
+    <?php foreach($usuarios as $u):
+      $esMismoUsuario = ((int)$u['id'] === $idSesionActual);
+      $activoInt = (int)($u['activo'] ?? 1);
+    ?>
+      <tr class="fila-usuario"
+          data-texto="<?=e(mb_strtolower(($u['nombre'] ?? '').' '.($u['email'] ?? '')))?>"
+          data-rol="<?=e(mb_strtolower($u['rol'] ?? ''))?>"
+          data-activo="<?=$activoInt?>">
+        <td>
+          <div class="user-cell">
+            <span class="avatar lg"><?=e(mb_strtoupper(mb_substr($u['nombre'] ?? '?', 0, 1)))?></span>
+            <span class="user-info">
+              <b><?=e($u['nombre'])?><?php if($esMismoUsuario): ?><span class="lead-tag">Tu cuenta</span><?php endif; ?></b>
+              <small><?=e($u['email'])?> &middot; #<?=(int)$u['id']?></small>
+            </span>
+          </div>
+        </td>
+        <td><span class="badge rol-<?=e(mb_strtolower($u['rol'] ?? 'cliente'))?>"><?=e($u['rol'])?></span></td>
+        <td>
+          <?php if($activoInt === 1): ?>
+            <span class="badge">Activo</span>
+          <?php else: ?>
+            <span class="badge cancelada">Inactivo</span>
+          <?php endif; ?>
+        </td>
+        <td>
+          <?php if($esMismoUsuario): ?>
+            <small class="muted">Tu sesión actual está protegida.</small>
+          <?php else: ?>
+            <div class="row-actions wrap">
+              <form method="post" action="index.php?action=actualizar_usuario" class="row-actions">
+                <input type="hidden" name="csrf" value="<?=csrf_token()?>">
+                <input type="hidden" name="usuario_id" value="<?=(int)$u['id']?>">
+                <select name="rol" aria-label="Rol de <?=e($u['nombre'])?>">
+                  <?php foreach($rolesDisponibles as $r): ?>
+                    <option value="<?=e($r)?>" <?=($u['rol'] === $r) ? 'selected' : ''?>><?=e($r)?></option>
+                  <?php endforeach; ?>
+                </select>
+                <select name="activo" aria-label="Estado de <?=e($u['nombre'])?>">
+                  <option value="1" <?=$activoInt === 1 ? 'selected' : ''?>>Activo</option>
+                  <option value="0" <?=$activoInt === 0 ? 'selected' : ''?>>Inactivo</option>
+                </select>
+                <button type="submit" class="sm">Guardar</button>
+              </form>
+              <form method="post" action="index.php?action=eliminar_usuario" onsubmit="return confirm('¿Desactivar este usuario? Se conservará el historial.');">
+                <input type="hidden" name="csrf" value="<?=csrf_token()?>">
+                <input type="hidden" name="usuario_id" value="<?=(int)$u['id']?>">
+                <button type="submit" class="sm danger">Quitar acceso</button>
+              </form>
+            </div>
+          <?php endif; ?>
+        </td>
+      </tr>
+    <?php endforeach; ?>
+  </table>
+  <div id="usuarios-sin-resultados" class="empty" style="display:none;"><p>Ningún usuario coincide con esos criterios.</p></div>
+</section>
 
 <script>
 (function() {
@@ -102,6 +108,7 @@ $idSesionActual = (int)($_SESSION['user']['id'] ?? 0);
   const selectActivo = document.getElementById('filtro-usuario-activo');
   const filas = document.querySelectorAll('.fila-usuario');
   const msgVacio = document.getElementById('usuarios-sin-resultados');
+  const conteo = document.getElementById('conteo-usuarios');
 
   function filtrarUsuarios() {
     const txt = (inputTxt.value || '').toLowerCase().trim();
@@ -123,10 +130,12 @@ $idSesionActual = (int)($_SESSION['user']['id'] ?? 0);
     });
 
     if (msgVacio) msgVacio.style.display = visibles === 0 ? 'block' : 'none';
+    if (conteo) conteo.textContent = visibles + (visibles === 1 ? ' usuario' : ' usuarios');
   }
 
   inputTxt.addEventListener('input', filtrarUsuarios);
   selectRol.addEventListener('change', filtrarUsuarios);
   selectActivo.addEventListener('change', filtrarUsuarios);
+  filtrarUsuarios();
 })();
 </script>

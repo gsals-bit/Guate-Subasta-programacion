@@ -2,75 +2,82 @@
 $tipos_evento = array_values(array_filter(array_unique(array_column($eventos, 'evento'))));
 sort($tipos_evento);
 ?>
-<h1>Auditoría</h1>
-<div class="audit-actions"><button type="button" onclick="window.print()">🖨 Imprimir bitácora / Guardar como PDF</button></div>
-<p>Bitácora de operaciones relevantes de la plataforma.</p>
-
-<section class="panel" style="margin-bottom:20px; padding:15px;">
-  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px; align-items:end;">
-    <div>
-      <label style="margin-top:0;">Buscar por usuario, detalle o fecha</label>
-      <input type="text" id="filtro-auditoria-texto" placeholder="Ej: cliente1, Subasta, 2026-10...">
-    </div>
-    <div>
-      <label style="margin-top:0;">Tipo de evento</label>
-      <select id="filtro-auditoria-evento">
-        <option value="">Todos los eventos</option>
-        <?php foreach($tipos_evento as $ev): ?>
-          <option value="<?=e(mb_strtolower($ev))?>"><?=e($ev)?></option>
-        <?php endforeach; ?>
-      </select>
-    </div>
-    <div style="text-align:right; font-size:0.9em; opacity:0.85; padding-bottom:8px;">
-      Mostrando <strong id="contador-eventos"><?=count($eventos)?></strong> registros
-    </div>
+<div class="page-head">
+  <div>
+    <h1>Auditoría</h1>
+    <p>Bitácora de las operaciones relevantes de la plataforma.</p>
   </div>
+  <div class="audit-actions">
+    <button type="button" class="ghost" onclick="window.print()">Imprimir o guardar como PDF</button>
+  </div>
+</div>
+
+<section class="panel filters">
+  <div class="search">
+    <label for="filtro-auditoria-texto">Buscar por usuario, detalle o fecha</label>
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="text" id="filtro-auditoria-texto" placeholder="Ej: cliente1, subasta, 2026-10">
+  </div>
+  <div>
+    <label for="filtro-auditoria-evento">Tipo de evento</label>
+    <select id="filtro-auditoria-evento">
+      <option value="">Todos los eventos</option>
+      <?php foreach($tipos_evento as $ev): ?>
+        <option value="<?=e(mb_strtolower($ev))?>"><?=e(str_replace('_', ' ', $ev))?></option>
+      <?php endforeach; ?>
+    </select>
+  </div>
+  <div></div>
+  <div class="count">Mostrando <strong id="contador-eventos"><?=count($eventos)?></strong> registros</div>
 </section>
 
 <?php if(empty($eventos)): ?>
   <section class="panel">
-    <p>No existen registros en la bitácora de auditoría.</p>
+    <div class="empty"><p>Todavía no hay registros en la bitácora.</p></div>
   </section>
 <?php else: ?>
-  <table id="tabla-auditoria">
-    <tr>
-      <th>ID</th>
-      <th>Fecha</th>
-      <th>Usuario</th>
-      <th>Rol</th>
-      <th>Evento</th>
-      <th>Detalle</th>
-    </tr>
-    <?php foreach($eventos as $x): 
-      $evUpper = strtoupper($x['evento'] ?? '');
-      $bgBadge = '#374151';
-      if (str_contains($evUpper, 'ELIMINAR')) {
-          $bgBadge = '#dc2626';
-      } elseif (str_contains($evUpper, 'CREAR') || str_contains($evUpper, 'PROGRAMAR') || str_contains($evUpper, 'REGISTRO')) {
-          $bgBadge = '#16a34a';
-      } elseif (str_contains($evUpper, 'PUJA')) {
-          $bgBadge = '#2563eb';
-      }
-      $usuarioNombre = $x['usuario'] ?? 'Sistema';
-      $rolUsuario = $x['rol_usuario'] ?? 'N/A';
-    ?>
-      <tr class="fila-evento"
-          data-busqueda="<?=e(mb_strtolower($usuarioNombre.' '.$rolUsuario.' '.($x['detalle'] ?? '').' '.($x['fecha'] ?? '')))?>"
-          data-evento="<?=e(mb_strtolower($x['evento'] ?? ''))?>">
-        <td>#<?=(int)$x['id']?></td>
-        <td><?=e($x['fecha'])?></td>
-        <td><strong><?=e($usuarioNombre)?></strong></td>
-        <td><?=e($rolUsuario)?></td>
-        <td>
-          <span style="background:<?=$bgBadge?>; color:#fff; padding:4px 8px; border-radius:4px; font-size:0.8em; font-weight:bold; display:inline-block;">
-            <?=e($x['evento'])?>
-          </span>
-        </td>
-        <td><?=e($x['detalle'])?></td>
+  <section class="panel table-panel">
+    <table id="tabla-auditoria">
+      <tr>
+        <th>Fecha</th>
+        <th>Usuario</th>
+        <th>Evento</th>
+        <th>Detalle</th>
       </tr>
-    <?php endforeach; ?>
-  </table>
-  <p id="auditoria-sin-resultados" style="display:none; opacity:0.8; margin-top:15px;">No se encontraron registros que coincidan con el filtro.</p>
+      <?php foreach($eventos as $x):
+        $evUpper = strtoupper($x['evento'] ?? '');
+        $claseEv = 'muted';
+        if (str_contains($evUpper, 'ELIMINAR')) {
+            $claseEv = 'cancelada';
+        } elseif (str_contains($evUpper, 'DESACTIVAR') || str_contains($evUpper, 'ARCHIVAR') || str_contains($evUpper, 'CANCEL')) {
+            $claseEv = 'warn';
+        } elseif (str_contains($evUpper, 'CREAR') || str_contains($evUpper, 'PROGRAMAR') || str_contains($evUpper, 'REGISTRO')) {
+            $claseEv = '';
+        } elseif (str_contains($evUpper, 'PUJA')) {
+            $claseEv = 'info';
+        }
+        $usuarioNombre = $x['usuario'] ?? 'Sistema';
+        $rolUsuario = $x['rol_usuario'] ?? 'N/A';
+        $tsFecha = strtotime((string)($x['fecha'] ?? ''));
+      ?>
+        <tr class="fila-evento"
+            data-busqueda="<?=e(mb_strtolower($usuarioNombre.' '.$rolUsuario.' '.($x['detalle'] ?? '').' '.($x['fecha'] ?? '').' '.($tsFecha ? date('d/m/Y', $tsFecha) : '')))?>"
+            data-evento="<?=e(mb_strtolower($x['evento'] ?? ''))?>">
+          <td>
+            <?=e($tsFecha ? date('d/m/Y h:i:s A', $tsFecha) : (string)$x['fecha'])?><br>
+            <small class="muted">Registro #<?=(int)$x['id']?></small>
+          </td>
+          <td>
+            <strong><?=e($usuarioNombre)?></strong><br>
+            <small class="muted"><?=e($rolUsuario)?></small>
+          </td>
+          <td><span class="badge <?=$claseEv?>"><?=e(str_replace('_', ' ', (string)$x['evento']))?></span></td>
+          <td class="cell-wrap"><?=e($x['detalle'])?></td>
+        </tr>
+      <?php endforeach; ?>
+    </table>
+    <div id="auditoria-sin-resultados" class="empty" style="display:none;"><p>Ningún registro coincide con el filtro.</p></div>
+  </section>
 <?php endif; ?>
 
 <script>
