@@ -711,34 +711,110 @@ input[type=file]::file-selector-button { margin-right: 12px; padding: 7px 14px; 
 /* ==========================================================
    CATÁLOGO (views/cliente/catalogo.php)
    ========================================================== */
-.filters { display: grid; grid-template-columns: minmax(220px, 2fr) 1fr 1fr auto; gap: 14px; align-items: end; padding: 18px 20px; margin-bottom: 22px; }
-.filters label { margin: 0 0 6px; }
-.filters .count { padding-bottom: 12px; color: var(--muted); font-size: .9rem; white-space: nowrap; }
-.search { position: relative; }
-.search .ico { position: absolute; left: 13px; bottom: 12px; width: 18px; height: 18px; color: var(--muted); pointer-events: none; }
-.search input { padding-left: 40px; }
+@keyframes cardFloatIn {
+  0% { opacity: 0; transform: translateY(20px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
 
-.lot-card { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow); transition: transform .2s ease, box-shadow .2s ease; }
-.lot-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
-/* Marco de imagen de tamaño fijo: cualquier foto se ajusta dentro de él (object-fit: contain = se ve completa;
-   cámbialo a "cover" si prefieres que llene todo el cuadro recortando los bordes). */
-.lot-cover { position: relative; flex-shrink: 0; height: 220px; overflow: hidden; display: grid; place-items: center; background: #f1f3f9; color: var(--muted); font-size: .9rem; }
-.lot-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 10px; background: #fff; }
+/* Panel de filtros moderno */
+.filters { 
+  display: grid; grid-template-columns: minmax(220px, 2fr) 1fr 1fr auto; gap: 16px; align-items: end; 
+  padding: 22px 26px; margin-bottom: 28px; 
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); 
+  box-shadow: 0 6px 16px -4px rgba(10,18,38,.06);
+}
+.filters label { 
+  margin: 0 0 8px; font-size: .82rem; color: var(--navy); font-weight: 700; 
+  text-transform: uppercase; letter-spacing: .04em; 
+}
+.filters .count { padding-bottom: 12px; color: var(--muted); font-size: .9rem; white-space: nowrap; font-weight: 500; }
+
+.search { position: relative; }
+.search .ico { position: absolute; left: 14px; bottom: 12px; width: 18px; height: 18px; color: var(--blue); pointer-events: none; }
+.search input { padding-left: 42px; border-color: #cfd4e2; }
+
+/* Estilizado personalizado para los "Select" (Categoría y Estado) */
+.filters select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f5bea' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  padding-right: 40px;
+  border-color: #cfd4e2;
+  font-weight: 500;
+}
+.filters select:hover, .search input:hover { border-color: var(--blue); }
+
+/* Tarjetas de artículos */
+.lot-card { 
+  display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; 
+  box-shadow: 0 4px 10px rgba(10,18,38,.03); 
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: cardFloatIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Retraso en cascada para la aparición de las tarjetas */
+.cards > .lot-card:nth-child(1) { animation-delay: 0.05s; }
+.cards > .lot-card:nth-child(2) { animation-delay: 0.10s; }
+.cards > .lot-card:nth-child(3) { animation-delay: 0.15s; }
+.cards > .lot-card:nth-child(4) { animation-delay: 0.20s; }
+.cards > .lot-card:nth-child(5) { animation-delay: 0.25s; }
+.cards > .lot-card:nth-child(6) { animation-delay: 0.30s; }
+.cards > .lot-card:nth-child(7) { animation-delay: 0.35s; }
+.cards > .lot-card:nth-child(8) { animation-delay: 0.40s; }
+
+/* Efecto hover vibrante */
+.lot-card:hover { 
+  transform: translateY(-6px); 
+  box-shadow: 0 16px 32px -12px rgba(16, 26, 52, 0.15), 0 0 0 1px var(--blue); 
+  border-color: transparent;
+}
+
+/* Contenedor de la imagen con gradiente sutil */
+.lot-cover { 
+  position: relative; flex-shrink: 0; height: 230px; overflow: hidden; display: grid; place-items: center; 
+  background: linear-gradient(160deg, #f1f3f9 0%, #ffffff 100%); color: var(--muted); font-size: .9rem; 
+}
+.lot-cover img { 
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 14px; 
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* Zoom a la imagen al pasar el mouse */
+.lot-card:hover .lot-cover img { transform: scale(1.07); }
+
 .lot-cover.no-img::after { content: 'Imagen no disponible'; }
-.lot-card.is-closed .lot-cover img { filter: grayscale(.55); opacity: .85; }
-.lot-cover .badge { position: absolute; z-index: 1; top: 12px; left: 12px; box-shadow: var(--shadow); }
-.lot-cover .countdown { position: absolute; z-index: 1; top: 12px; right: 12px; box-shadow: var(--shadow); }
-.lot-body { display: flex; flex-direction: column; gap: 4px; flex: 1; padding: 18px 20px 20px; }
-.lot-cat { font-size: .82rem; color: var(--muted); }
-.lot-card h3 { margin: 0 0 6px; font-size: 1.15rem; line-height: 1.25; color: var(--ink); }
-.lot-money { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; margin: 4px 0 6px; }
-.lot-money small { display: block; color: var(--muted); font-size: .8rem; }
-.lot-money b { font-family: var(--font-display); font-size: 1.65rem; font-weight: 800; letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.lot-card.is-closed .lot-cover img { filter: grayscale(.6); opacity: .7; }
+
+/* Posicionamiento de etiquetas */
+.lot-cover .badge { position: absolute; z-index: 1; top: 14px; left: 14px; box-shadow: 0 4px 8px rgba(0,0,0,.08); }
+.lot-cover .countdown { position: absolute; z-index: 1; top: 14px; right: 14px; box-shadow: 0 4px 8px rgba(0,0,0,.08); }
+
+.lot-body { display: flex; flex-direction: column; gap: 4px; flex: 1; padding: 20px 22px 24px; }
+.lot-cat { font-size: .82rem; font-weight: 600; color: var(--blue); text-transform: uppercase; letter-spacing: .02em; }
+
+.lot-card h3 { 
+  margin: 0 0 6px; font-size: 1.2rem; line-height: 1.25; color: var(--ink); 
+  transition: color 0.2s ease;
+}
+.lot-card:hover h3 { color: var(--blue); }
+
+.lot-money { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; margin: 8px 0 6px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.lot-money small { display: block; color: var(--muted); font-size: .82rem; }
+.lot-money b { 
+  font-family: var(--font-display); font-size: 1.7rem; font-weight: 800; letter-spacing: -.02em; 
+  color: var(--ink); font-variant-numeric: tabular-nums; 
+  transition: color 0.3s ease;
+}
+.lot-card:hover .lot-money b { color: var(--blue); }
+
 .lot-facts { margin: 0; color: var(--muted); font-size: .88rem; }
 .lot-facts strong { color: var(--text); font-weight: 600; }
-.lot-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: auto; padding-top: 14px; }
-.lot-actions .button, .lot-actions button { margin-top: 0; }
-.lot-actions form { margin: 0; }
+.lot-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: auto; padding-top: 18px; }
+.lot-actions .button, .lot-actions button { margin-top: 0; flex: 1; }
+.lot-actions form { margin: 0; width: 100%; display: flex; gap: 10px; }
 
 /* ==========================================================
    PAGO (views/cliente/pago.php)
