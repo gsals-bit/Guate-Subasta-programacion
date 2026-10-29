@@ -34,15 +34,16 @@ class Articulo {
         return $q->fetchAll();
     }
 
-    public function create(array $d): bool {
+public function create(array $d): bool {
+        $lat = ($d['ubicacion_lat'] ?? '') !== '' ? $d['ubicacion_lat'] : null;
+        $lng = ($d['ubicacion_lng'] ?? '') !== '' ? $d['ubicacion_lng'] : null;
         $q = $this->db->prepare("INSERT INTO articulos(nombre,categoria,descripcion,estado_fisico,precio_base,modelo,imagen,creado_por,ubicacion_nombre,ubicacion_lat,ubicacion_lng)
         VALUES(?,?,?,?,?,?,?,?,?,?,?)");
         return $q->execute([
             $d['nombre'], $d['categoria'], $d['descripcion'], $d['estado_fisico'],
-            $d['precio_base'], $d['modelo'], $d['imagen'], $d['creado_por'], $d['ubicacion_nombre'] ?: null, $d['ubicacion_lat'], $d['ubicacion_lng']
+            $d['precio_base'], $d['modelo'], $d['imagen'], $d['creado_por'], $d['ubicacion_nombre'] ?: null, $lat, $lng
         ]);
     }
-
     public function find(int $id): ?array {
         $q = $this->db->prepare("SELECT * FROM articulos WHERE id = ?");
         $q->execute([$id]);

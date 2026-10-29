@@ -362,9 +362,9 @@ $primeraImg = function ($raw): ?string {
       this.value = ''; // permite abrir el selector otra vez sin borrar las fotos previas
     });
   }
-
-  // 3. Mapa con Leaflet / OpenStreetMap (sin clave de Google Maps)
+// 3. Mapa con Leaflet / OpenStreetMap (sin clave de Google Maps)
   const mapaElemento = document.getElementById('mapa-entrega');
+  const inputUbicacionNombre = document.getElementById('ubicacion-nombre');
   const latitudOculta = document.getElementById('ubicacion-lat');
   const longitudOculta = document.getElementById('ubicacion-lng');
   const textoMapa = document.getElementById('estado-mapa');
@@ -373,6 +373,8 @@ $primeraImg = function ($raw): ?string {
   const botonLimpiar = document.getElementById('btn-limpiar-ubicacion');
   let mapa = null;
   let marcador = null;
+  let temporizadorBusqueda = null;
+  let enviandoFormulario = false;
 
   function marcarUbicacion(lat, lng, acercar = true) {
     latitudOculta.value = Number(lat).toFixed(7);
@@ -391,6 +393,56 @@ $primeraImg = function ($raw): ?string {
     enlaceMaps.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(latitudOculta.value + ',' + longitudOculta.value);
     enlaceMaps.style.display = 'inline-block';
   }
+
+  // Buscar dirección escrita restringida a Guatemala (countrycodes=gt)
+  async function buscarDireccionGuatemala(texto) {
+    const consulta = (texto || '').trim();
+    if (consulta.length < 3) return false;
+    textoMapa.textContent = 'Buscando dirección en el mapa de Guatemala...';
+    try {
+      const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=gt&limit=1&accept-language=es&q=' + encodeURIComponent(consulta + ', Guatemala');
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      let datos = res.ok ? await res.json() : [];
+
+      if (!Array.isArray(datos) || datos.length === 0) {
+        const url2 = 'https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=gt&limit=1&accept-language=es&q=' + encodeURIComponent(consulta);
+        const res2 = await fetch(url2, { headers: { 'Accept': 'application/json' } });
+        if (res2.ok) datos = await res2.json();
+      }
+
+      if (Array.isArray(datos) && datos.length > 0) {
+        const lat = parseFloat(datos[0].lat);
+        const lon = parseFloat(datos[0].lon);
+        if (!isNaN(lat) && !isNaN(lon)) {
+          marcarUbicacion(lat, lon, true);
+          textoMapa.textContent = 'Ubicación localizada en Guatemala según la dirección escrita. Puedes arrastrar el marcador para ajustarlo.';
+          return true;
+        }
+      }
+      textoMapa.textContent = 'No se encontró el punto exacto en el mapa, pero puedes guardar el artículo con la dirección escrita.';
+      return false;
+    } catch (e) {
+      textoMapa.textContent = 'No se pudo consultar el mapa en este momento, pero puedes guardar con la dirección escrita.';
+      return false;
+    }
+  }
+
+  inputUbicacionNombre?.addEventListener('input', function () {
+    clearTimeout(temporizadorBusqueda);
+    const valor = this.value.trim();
+    if (valor.length < 3) return;
+    temporizadorBusqueda = setTimeout(() => {
+      buscarDireccionGuatemala(valor);
+    }, 650);
+  });
+
+  inputUbicacionNombre?.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      clearTimeout(temporizadorBusqueda);
+      buscarDireccionGuatemala(this.value);
+    }
+  });
 
   if (mapaElemento && window.L) {
     mapa = L.map(mapaElemento).setView([14.6349, -90.5069], 12);
@@ -426,6 +478,7 @@ $primeraImg = function ($raw): ?string {
       {enableHighAccuracy: true, timeout: 15000, maximumAge: 0}
     );
   });
+
   botonLimpiar?.addEventListener('click', function () {
     latitudOculta.value = '';
     longitudOculta.value = '';
@@ -434,17 +487,37 @@ $primeraImg = function ($raw): ?string {
     textoMapa.textContent = 'Aún no seleccionaste una ubicación de entrega.';
   });
 
-  form?.addEventListener('submit', function (evento) {
+  form?.addEventListener('submit', async function (evento) {
+    if (enviandoFormulario) return;
+
     if (imagenesSeleccionadas.length < 1 || imagenesSeleccionadas.length > MAX_IMAGENES) {
       evento.preventDefault();
       alert('Selecciona entre 1 y 10 fotografías antes de guardar el artículo.');
       selectorImagenes.focus();
       return;
     }
-    if (!latitudOculta.value || !longitudOculta.value) {
+
+    const direccionEscrita = (inputUbicacionNombre?.value || '').trim();
+    const tieneCoordenadas = Boolean(latitudOculta.value && longitudOculta.value);
+
+    if (!tieneCoordenadas && !direccionEscrita) {
       evento.preventDefault();
-      alert('Selecciona el punto de entrega en el mapa o usa tu ubicación actual.');
-      mapaElemento.scrollIntoView({behavior: 'smooth', block: 'center'});
+      alert('Escribe una dirección o referencia de entrega, o selecciona el punto en el mapa.');
+      if (inputUbicacionNombre) {
+        inputUbicacionNombre.focus();
+      } else {
+        mapaElemento.scrollIntoView({behavior: 'smooth', block: 'center'});
+      }
+      return;
+    }
+
+    // Si escribió dirección pero aún no se ha marcado el punto, intenta ubicarlo en Guatemala antes de guardar
+    if (!tieneCoordenadas && direccionEscrita) {
+      evento.preventDefault();
+      clearTimeout(temporizadorBusqueda);
+      await buscarDireccionGuatemala(direccionEscrita);
+      enviandoFormulario = true;
+      form.submit();
     }
   });
 
