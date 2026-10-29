@@ -823,3 +823,14 @@ input[type=file]::file-selector-button { margin-right: 12px; padding: 7px 14px; 
   .auth-split { grid-template-columns: 1fr; margin: 12px auto; }
   .auth-aside, .auth-form { padding: 28px 24px; }
 }
+
+/* ==========================================================
+   VERIFICACIÓN DE COMPROBANTE (views/cliente/verificar_factura.php)
+   ========================================================== */
+.verify { max-width: 560px; margin: 28px auto; }
+.verify h1 { text-align: center; font-size: 1.7rem; }
+.verify .lead { margin: 0 0 20px; text-align: center; color: var(--muted); }
+.verify-icon { width: 56px; height: 56px; display: grid; place-items: center; margin: 0 auto 14px; border-radius: 50%; }
+.verify-icon .ico { width: 30px; height: 30px; }
+.verify-icon.ok { background: var(--green-soft); color: var(--green); }
+.verify-icon.fail { background: var(--red-soft); color: var(--red); }
