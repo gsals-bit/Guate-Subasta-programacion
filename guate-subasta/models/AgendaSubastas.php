@@ -165,6 +165,17 @@ public function marcarLeidosSubasta(int $userId, int $subastaId): void {
     $q=$this->db->prepare('INSERT IGNORE INTO avisos_subastas_leidos(usuario_id,aviso_id) SELECT ?,v.id FROM avisos_subastas v WHERE v.subasta_id=? AND v.creado_por<>?');
     $q->execute([$userId,$subastaId,$userId]);
 }
+/** Aviso para los demás usuarios cuando alguien puja. Solo aviso dentro del sitio (sin correo). */
+public function avisarPuja(int $subastaId, int $usuarioId, float $monto): void {
+    if ($subastaId <= 0 || $usuarioId <= 0) return;
+    $q=$this->db->prepare('SELECT s.fecha_inicio,s.fecha_fin,a.nombre FROM subastas s JOIN articulos a ON a.id=s.articulo_id WHERE s.id=?');
+    $q->execute([$subastaId]);
+    $s=$q->fetch(PDO::FETCH_ASSOC);
+    if (!$s) return;
+    $mensaje='Hay una nueva puja de Q '.number_format($monto,2).' en «'.$s['nombre'].'». La subasta cierra el '.date('d/m/Y H:i',strtotime((string)$s['fecha_fin'])).'.';
+    $q=$this->db->prepare('INSERT INTO avisos_subastas (subasta_id, creado_por, tipo, titulo, mensaje, fecha_inicio, fecha_fin) VALUES (?,?,?,?,?,?,?)');
+    $q->execute([$subastaId,$usuarioId,'puja','Nueva puja',mb_substr($mensaje,0,500),$s['fecha_inicio'],$s['fecha_fin']]);
+}
 
     public function correoActivo(int $userId): bool {
         $q=$this->db->prepare('SELECT correo_habilitado FROM preferencias_avisos_subastas WHERE usuario_id=?');
